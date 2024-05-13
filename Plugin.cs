@@ -191,5 +191,13 @@ namespace EnemySoundFixes
                 }
             }
         }
+
+        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.KillEnemy))]
+        [HarmonyPrefix]
+        static void CentipedeAIPostKillEnemy(CentipedeAI __instance)
+        {
+            // randomize death pitch
+            __instance.creatureVoice.pitch = Random.value > 0.5f ? 1f : 1.7f;
+        }
     }
 }
