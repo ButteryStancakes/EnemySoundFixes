@@ -193,7 +193,7 @@ namespace EnemySoundFixes
         }
 
         [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.KillEnemy))]
-        [HarmonyPrefix]
+        [HarmonyPostfix]
         static void CentipedeAIPostKillEnemy(CentipedeAI __instance)
         {
             // randomize death pitch
