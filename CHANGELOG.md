@@ -1,3 +1,5 @@
+# v1.1.2
+- Fixed fall damage for players using the wrong SFX (unless you crash a jetpack)
 # v1.1.1
 - Forest keeper "eating fixes" now apply when you teleport a player out of their hand
 # v1.1.0

@@ -6,13 +6,14 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
+using GameNetcodeStuff;
 
 namespace EnemySoundFixes
 {
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.1.1";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.1.2";
         internal static new ManualLogSource Logger;
 
         void Awake()
@@ -280,6 +281,17 @@ namespace EnemySoundFixes
                         }
                     }
                 }
+            }
+        }
+
+        [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayer))]
+        [HarmonyPrefix]
+        static void PlayerControllerBPreDamagePlayer(CauseOfDeath causeOfDeath, ref bool fallDamage)
+        {
+            if (causeOfDeath == CauseOfDeath.Gravity && !fallDamage)
+            {
+                fallDamage = true;
+                Plugin.Logger.LogInfo("Player: Treat Gravity damage as fall damage");
             }
         }
     }
