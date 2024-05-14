@@ -1,3 +1,5 @@
+# v1.1.1
+- Forest keeper "eating fixes" now apply when you teleport a player out of their hand
 # v1.1.0
 - Polish pass on forest keepers
 - Reworked some snare flea code (to fix a broken patch that I replaced last minute before release)

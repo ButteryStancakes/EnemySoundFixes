@@ -12,7 +12,7 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.1.0";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.1.1";
         internal static new ManualLogSource Logger;
 
         void Awake()
@@ -30,6 +30,7 @@ namespace EnemySoundFixes
     {
         static AudioClip /*hitEnemyBody,*/ baboonTakeDamage;
         static readonly FieldInfo CREATURE_VOICE = typeof(EnemyAI).GetField(nameof(EnemyAI.creatureVoice), BindingFlags.Instance | BindingFlags.Public);
+        const float TIME_PLAY_AUDIO_2 = 178f / 60f; // frame 178 at 60 fps - PlayAudio2 event
 
         [HarmonyPatch(typeof(QuickMenuManager), "Start")]
         [HarmonyPostfix]
@@ -168,20 +169,17 @@ namespace EnemySoundFixes
             if (__instance.stunNormalizedTimer > 0f || __instance.isEnemyDead || __instance.currentBehaviourState.name == "Burning")
             {
                 PlayAudioAnimationEvent playAudioAnimationEvent = __instance.animationContainer.GetComponent<PlayAudioAnimationEvent>();
-                if (playAudioAnimationEvent != null)
+                AudioSource closeWideSFX = playAudioAnimationEvent.audioToPlay;
+                if (closeWideSFX.isPlaying)
                 {
-                    AudioSource closeWideSFX = playAudioAnimationEvent.audioToPlay;
-                    if (closeWideSFX.isPlaying)
-                    {
-                        closeWideSFX.Stop();
-                        Plugin.Logger.LogInfo("Forest keeper: Stop chewing non-existent player");
-                    }
-                    ParticleSystem bloodParticle = playAudioAnimationEvent.particle;
-                    if (bloodParticle.isEmitting)
-                    {
-                        bloodParticle.Stop();
-                        Plugin.Logger.LogInfo("Forest keeper: Don't spray blood from mouth");
-                    }
+                    closeWideSFX.Stop();
+                    Plugin.Logger.LogInfo("Forest keeper: Stop chewing (eating animation interrupted)");
+                }
+                ParticleSystem bloodParticle = playAudioAnimationEvent.particle;
+                if (bloodParticle.isEmitting)
+                {
+                    bloodParticle.Stop();
+                    Plugin.Logger.LogInfo("Forest keeper: Stop spraying blood from mouth (eating animation interrupted)");
                 }
             }
         }
@@ -225,11 +223,64 @@ namespace EnemySoundFixes
         {
             if (__instance.audioClip2.name == "FGiantEatPlayerSFX")
             {
-                __instance.audioToPlay.PlayOneShot(__instance.audioClip2);
-                Plugin.Logger.LogInfo("Forest keeper: Play bite sound effect with overlap");
+                ForestGiantAI forestGiantAI = __instance.GetComponent<EnemyAnimationEvent>().mainScript as ForestGiantAI;
+                if (forestGiantAI.inSpecialAnimationWithPlayer != null && forestGiantAI.inSpecialAnimationWithPlayer.inAnimationWithEnemy == forestGiantAI)
+                {
+                    __instance.audioToPlay.PlayOneShot(__instance.audioClip2);
+                    Plugin.Logger.LogInfo("Forest keeper: Play bite sound effect with overlap");
+                }
+                else
+                    Plugin.Logger.LogInfo("Forest keeper: Don't bite (player was teleported)");
+
                 return false;
             }
+
             return true;
+        }
+
+        [HarmonyPatch(typeof(PlayAudioAnimationEvent), nameof(PlayAudioAnimationEvent.PlayParticle))]
+        [HarmonyPrefix]
+        static bool PlayAudioAnimationEventPrePlayParticle(PlayAudioAnimationEvent __instance)
+        {
+            if (__instance.audioClip2.name == "FGiantEatPlayerSFX")
+            {
+                ForestGiantAI forestGiantAI = __instance.GetComponent<EnemyAnimationEvent>().mainScript as ForestGiantAI;
+                if (forestGiantAI.inSpecialAnimationWithPlayer != null && forestGiantAI.inSpecialAnimationWithPlayer.inAnimationWithEnemy == forestGiantAI)
+                    return true;
+
+                Plugin.Logger.LogInfo("Forest keeper: Don't spray blood (player was teleported)");
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.CancelSpecialAnimationWithPlayer))]
+        [HarmonyPrefix]
+        static void EnemyAIPreCancelSpecialAnimationWithPlayer(EnemyAI __instance)
+        {
+            if (__instance is ForestGiantAI)
+            {
+                if (__instance.inSpecialAnimationWithPlayer != null && __instance.inSpecialAnimationWithPlayer.inAnimationWithEnemy == __instance && !__instance.inSpecialAnimationWithPlayer.isPlayerDead)
+                {
+                    PlayAudioAnimationEvent playAudioAnimationEvent = (__instance as ForestGiantAI).animationContainer.GetComponent<PlayAudioAnimationEvent>();
+                    AudioSource closeWideSFX = playAudioAnimationEvent.audioToPlay;
+                    if (closeWideSFX.isPlaying && closeWideSFX.clip.name == "Roar" && closeWideSFX.time >= TIME_PLAY_AUDIO_2)
+                    {
+                        // this unfortunately has the side effect of cancelling the roar early
+                        // this is... fine? it is helpful as an audio cue to indicate that you successfully rescued its victim
+                        // would be nice to fix it eventually, though
+                        closeWideSFX.Stop();
+                        Plugin.Logger.LogInfo("Forest keeper: Stop chewing (player was teleported)");
+                        ParticleSystem bloodParticle = playAudioAnimationEvent.particle;
+                        if (bloodParticle.isEmitting)
+                        {
+                            bloodParticle.Stop();
+                            Plugin.Logger.LogInfo("Forest keeper: Stop spraying blood from mouth (player was teleported)");
+                        }
+                    }
+                }
+            }
         }
     }
 }
