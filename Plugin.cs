@@ -7,18 +7,26 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 using GameNetcodeStuff;
+using BepInEx.Configuration;
 
 namespace EnemySoundFixes
 {
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.1.2";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.0";
         internal static new ManualLogSource Logger;
+        internal static ConfigEntry<bool> configDontFixMasks;
 
         void Awake()
         {
             Logger = base.Logger;
+
+            configDontFixMasks = Config.Bind(
+                "Misc",
+                "DontFixMasks",
+                false,
+                "(Host only, requires game restart) Disables the fix for masks' broken audio intervals.\nUseful if you use a voice mimicking mod (Skinwalkers, Mirage, etc.) or just find the masks to be too noisy.");
 
             new Harmony(PLUGIN_GUID).PatchAll();
 
@@ -108,7 +116,7 @@ namespace EnemySoundFixes
         }
 
         [HarmonyPatch(typeof(CentipedeAI), "delayedShriek", MethodType.Enumerator)]
-        [HarmonyTranspiler()]
+        [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> CentipedeAITransDelayedShriek(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             List<CodeInstruction> codes = instructions.ToList();
@@ -187,7 +195,7 @@ namespace EnemySoundFixes
 
         [HarmonyPatch(typeof(ForestGiantAI), "StopKillAnimation")]
         [HarmonyPatch(typeof(ForestGiantAI), "EatPlayerAnimation", MethodType.Enumerator)]
-        [HarmonyTranspiler()]
+        [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> ForestGiantAITransAnimation(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
@@ -293,6 +301,44 @@ namespace EnemySoundFixes
                 fallDamage = true;
                 Plugin.Logger.LogInfo("Player: Treat Gravity damage as fall damage");
             }
+        }
+
+        [HarmonyPatch(typeof(RandomPeriodicAudioPlayer), "Update")]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> RandomPeriodicAudioPlayerTransUpdate(IEnumerable<CodeInstruction> instructions)
+        {
+            if (Plugin.configDontFixMasks.Value)
+                return instructions;
+
+            List<CodeInstruction> codes = instructions.ToList();
+
+            bool pass = true;
+            for (int i = 1; i < codes.Count; i++)
+            {
+                //Plugin.Logger.LogInfo(codes[i]);
+                if (codes[i].opcode == OpCodes.Add)
+                {
+                    for (int j = i - 1; j >= 0; j--)
+                    {
+                        if (codes[j].opcode == OpCodes.Call)
+                        {
+                            if (!pass)
+                            {
+                                codes[i].opcode = OpCodes.Nop;
+                                codes[i].operand = null;
+                                codes[j].opcode = OpCodes.Nop;
+                                codes[j].operand = null;
+                                Plugin.Logger.LogInfo("Transpiler: Fix periodic mask audio intervals");
+                                return codes;
+                            }
+                            else
+                                pass = false;
+                        }
+                    }
+                }
+            }
+
+            return codes;
         }
     }
 }

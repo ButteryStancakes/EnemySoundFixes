@@ -1,3 +1,5 @@
+# v1.2.0
+- Fixed mask items and enemies not playing laugh/cry noises as often as they are supposed to.
 # v1.1.2
 - Fixed fall damage for players using the wrong SFX (unless you crash a jetpack)
 # v1.1.1
