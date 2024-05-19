@@ -14,7 +14,7 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.0";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.1";
         internal static new ManualLogSource Logger;
         internal static ConfigEntry<bool> configDontFixMasks;
 
@@ -312,7 +312,6 @@ namespace EnemySoundFixes
 
             List<CodeInstruction> codes = instructions.ToList();
 
-            bool pass = true;
             for (int i = 1; i < codes.Count; i++)
             {
                 //Plugin.Logger.LogInfo(codes[i]);
@@ -320,25 +319,28 @@ namespace EnemySoundFixes
                 {
                     for (int j = i - 1; j >= 0; j--)
                     {
-                        if (codes[j].opcode == OpCodes.Call)
+                        if (codes[j].opcode == OpCodes.Call && (MethodInfo)codes[j].operand == typeof(Time).GetMethod($"get_{nameof(Time.realtimeSinceStartup)}", BindingFlags.Static | BindingFlags.Public))
                         {
-                            if (!pass)
-                            {
-                                codes[i].opcode = OpCodes.Nop;
-                                codes[i].operand = null;
-                                codes[j].opcode = OpCodes.Nop;
-                                codes[j].operand = null;
-                                Plugin.Logger.LogInfo("Transpiler: Fix periodic mask audio intervals");
-                                return codes;
-                            }
-                            else
-                                pass = false;
+                            codes[i].opcode = OpCodes.Nop;
+                            codes[i].operand = null;
+                            codes[j].opcode = OpCodes.Nop;
+                            codes[j].operand = null;
+                            Plugin.Logger.LogInfo("Transpiler: Fix periodic mask audio intervals");
+                            return codes;
                         }
                     }
                 }
             }
 
             return codes;
+        }
+
+        [HarmonyPatch(typeof(AnimatedObjectTrigger), nameof(AnimatedObjectTrigger.Start))]
+        [HarmonyPostfix]
+        static void AnimatedObjectTriggerPostStart(AnimatedObjectTrigger __instance)
+        {
+            if (__instance.playParticle == null)
+                __instance.playParticleOnTimesTriggered = -1;
         }
     }
 }

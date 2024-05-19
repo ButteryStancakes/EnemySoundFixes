@@ -1,3 +1,5 @@
+# v1.2.1
+- Fixed a bug that caused certain animated map objects to not play audio (in vanilla, that would be garage door on Experimentation)
 # v1.2.0
 - Fixed mask items and enemies not playing laugh/cry noises as often as they are supposed to.
 # v1.1.2
