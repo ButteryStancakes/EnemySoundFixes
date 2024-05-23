@@ -1,3 +1,5 @@
+# v1.2.2
+- Fixed a potential nullref exception with animated particles.
 # v1.2.1
 - Fixed a bug that caused certain animated map objects to not play audio (in vanilla, that would be garage door on Experimentation)
 # v1.2.0

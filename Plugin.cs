@@ -14,7 +14,7 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.1";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.2";
         internal static new ManualLogSource Logger;
         internal static ConfigEntry<bool> configDontFixMasks;
 
@@ -251,14 +251,14 @@ namespace EnemySoundFixes
         [HarmonyPrefix]
         static bool PlayAudioAnimationEventPrePlayParticle(PlayAudioAnimationEvent __instance)
         {
-            if (__instance.audioClip2.name == "FGiantEatPlayerSFX")
+            if (__instance.audioClip2 != null && __instance.audioClip2.name == "FGiantEatPlayerSFX")
             {
-                ForestGiantAI forestGiantAI = __instance.GetComponent<EnemyAnimationEvent>().mainScript as ForestGiantAI;
-                if (forestGiantAI.inSpecialAnimationWithPlayer != null && forestGiantAI.inSpecialAnimationWithPlayer.inAnimationWithEnemy == forestGiantAI)
-                    return true;
-
-                Plugin.Logger.LogInfo("Forest keeper: Don't spray blood (player was teleported)");
-                return false;
+                EnemyAI enemyAI = __instance.GetComponent<EnemyAnimationEvent>().mainScript;
+                if (enemyAI.inSpecialAnimationWithPlayer == null || enemyAI.inSpecialAnimationWithPlayer.inAnimationWithEnemy != enemyAI)
+                {
+                    Plugin.Logger.LogInfo("Forest keeper: Don't spray blood (player was teleported)");
+                    return false;
+                }
             }
 
             return true;
