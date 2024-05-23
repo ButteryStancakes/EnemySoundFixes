@@ -1,6 +1,7 @@
 # v1.2.3
 - Inverted "DontFixMasks" option to "FixMasks" option, which I think is more intuitive
   - Your config should be updated automatically to use the proper setting
+- Snare flea death scream is no longer random pitch
 # v1.2.2
 - Fixed a potential nullref exception with animated particles.
 # v1.2.1
