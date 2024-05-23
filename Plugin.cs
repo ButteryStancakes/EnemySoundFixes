@@ -14,19 +14,31 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.2";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.3";
         internal static new ManualLogSource Logger;
-        internal static ConfigEntry<bool> configDontFixMasks;
+        internal static ConfigEntry<bool> configFixMasks;
 
         void Awake()
         {
             Logger = base.Logger;
 
-            configDontFixMasks = Config.Bind(
+            configFixMasks = Config.Bind(
                 "Misc",
-                "DontFixMasks",
-                false,
-                "(Host only, requires game restart) Disables the fix for masks' broken audio intervals.\nUseful if you use a voice mimicking mod (Skinwalkers, Mirage, etc.) or just find the masks to be too noisy.");
+                "FixMasks",
+                true,
+                "(Host only, requires game restart) Fixes masks' broken audio intervals.\nDisabling this is useful if you use a voice mimicking mod (Skinwalkers, Mirage, etc.) or just find the masks to be too noisy.");
+
+            // migrate from previous version if necessary
+            if (configFixMasks.Value)
+            {
+                bool dontFixMasks = Config.Bind("Misc", "DontFixMasks", false, "Legacy setting, use \"FixMasks\" instead").Value;
+                if (dontFixMasks)
+                {
+                    configFixMasks.Value = false;
+                    Config.Save();
+                }
+                Config.Remove(Config["Misc", "DontFixMasks"].Definition);
+            }
 
             new Harmony(PLUGIN_GUID).PatchAll();
 
@@ -151,14 +163,15 @@ namespace EnemySoundFixes
                 Plugin.Logger.LogInfo("Snare flea: Stop walking while dead, clinging to player, or sneaking away");
             }
         }
-
-        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.KillEnemy))]
+        
+        // on second thought, even though it's dubious whether Zeekerss *intended* this clip to play at 1.7x pitch, it *does* nevertheless always play at 1.7x pitch in vanilla
+        /*[HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.KillEnemy))]
         [HarmonyPostfix]
         static void CentipedeAIPostKillEnemy(CentipedeAI __instance)
         {
             __instance.creatureVoice.pitch = Random.value > 0.5f ? 1f : 1.7f;
             Plugin.Logger.LogInfo("Snare flea: Randomize death screech pitch");
-        }
+        }*/
 
         [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.PlayAudioOfCurrentState))]
         [HarmonyPostfix]
@@ -307,7 +320,7 @@ namespace EnemySoundFixes
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> RandomPeriodicAudioPlayerTransUpdate(IEnumerable<CodeInstruction> instructions)
         {
-            if (Plugin.configDontFixMasks.Value)
+            if (!Plugin.configFixMasks.Value)
                 return instructions;
 
             List<CodeInstruction> codes = instructions.ToList();
