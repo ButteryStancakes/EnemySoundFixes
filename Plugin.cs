@@ -14,7 +14,7 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.3";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.4";
         internal static new ManualLogSource Logger;
         internal static ConfigEntry<bool> configFixMasks;
 
@@ -354,6 +354,14 @@ namespace EnemySoundFixes
         {
             if (__instance.playParticle == null)
                 __instance.playParticleOnTimesTriggered = -1;
+        }
+
+        [HarmonyPatch(typeof(ButlerEnemyAI), nameof(ButlerEnemyAI.Update))]
+        [HarmonyPostfix]
+        static void ButlerEnemyAIPostUpdate(ButlerEnemyAI __instance)
+        {
+            if (__instance.isEnemyDead && __instance.buzzingAmbience.isPlaying && __instance.creatureAnimator.GetBool("popFinish"))
+                __instance.buzzingAmbience.Stop();
         }
     }
 }
