@@ -14,7 +14,7 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.2.4";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.3.0";
         internal static new ManualLogSource Logger;
         internal static ConfigEntry<bool> configFixMasks;
 
@@ -49,9 +49,12 @@ namespace EnemySoundFixes
     [HarmonyPatch]
     class EnemySoundFixesPatches
     {
-        static AudioClip /*hitEnemyBody,*/ baboonTakeDamage;
         static readonly FieldInfo CREATURE_VOICE = typeof(EnemyAI).GetField(nameof(EnemyAI.creatureVoice), BindingFlags.Instance | BindingFlags.Public);
+        static readonly FieldInfo MOUTH_DOG_AI_IN_KILL_ANIMATION = typeof(MouthDogAI).GetField("inKillAnimation", BindingFlags.Instance | BindingFlags.NonPublic);
         const float TIME_PLAY_AUDIO_2 = 178f / 60f; // frame 178 at 60 fps - PlayAudio2 event
+
+        static AudioClip /*hitEnemyBody,*/ baboonTakeDamage;
+        static Dictionary<MouthDogAI, float> dogPitches = new();
 
         [HarmonyPatch(typeof(QuickMenuManager), "Start")]
         [HarmonyPostfix]
@@ -145,7 +148,7 @@ namespace EnemySoundFixes
                     codes.Insert(i + 2, new CodeInstruction(OpCodes.Brfalse, label));
                     codes.Insert(i + 3, new CodeInstruction(OpCodes.Ldc_I4_0, null));
                     codes.Insert(i + 4, new CodeInstruction(OpCodes.Ret, null));
-                    Plugin.Logger.LogInfo("Transpiler: Patched Centipede shriek (added isEnemyDead check)");
+                    Plugin.Logger.LogDebug("Transpiler: Patched Centipede shriek (added isEnemyDead check)");
                     break;
                 }
             }
@@ -223,7 +226,7 @@ namespace EnemySoundFixes
                         codes[j].opcode = OpCodes.Nop;
                         codes[j].operand = null;
                     }
-                    Plugin.Logger.LogInfo("Transpiler: Don't interrupt forest keeper voice");
+                    Plugin.Logger.LogDebug("Transpiler: Don't interrupt forest keeper voice");
                     break;
                 }
             }
@@ -338,7 +341,7 @@ namespace EnemySoundFixes
                             codes[i].operand = null;
                             codes[j].opcode = OpCodes.Nop;
                             codes[j].operand = null;
-                            Plugin.Logger.LogInfo("Transpiler: Fix periodic mask audio intervals");
+                            Plugin.Logger.LogDebug("Transpiler: Fix periodic mask audio intervals");
                             return codes;
                         }
                     }
@@ -361,7 +364,88 @@ namespace EnemySoundFixes
         static void ButlerEnemyAIPostUpdate(ButlerEnemyAI __instance)
         {
             if (__instance.isEnemyDead && __instance.buzzingAmbience.isPlaying && __instance.creatureAnimator.GetBool("popFinish"))
+            {
                 __instance.buzzingAmbience.Stop();
+                Plugin.Logger.LogInfo("Butler: Stop buzzing (bugs are free)");
+            }
+        }
+
+        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillEnemy))]
+        [HarmonyPostfix]
+        static void MouthDogAIPostKillEnemy(ButlerEnemyAI __instance)
+        {
+            __instance.creatureVoice.mute = true;
+            Plugin.Logger.LogInfo("Eyeless dog: Don't start breathing after death");
+        }
+
+        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.Start))]
+        [HarmonyPostfix]
+        static void MouthDogAIPostStart(MouthDogAI __instance)
+        {
+            dogPitches.Add(__instance, __instance.creatureVoice.pitch);
+            Plugin.Logger.LogInfo($"Eyeless dog: Cached reference ({dogPitches.Count}/{__instance.enemyType.numberSpawned} total)");
+        }
+
+        [HarmonyPatch(typeof(EnemyAI), "SubtractFromPowerLevel")]
+        [HarmonyPostfix]
+        static void EnemyAIPostSubtractFromPowerLevel(EnemyAI __instance)
+        {
+            if (__instance is MouthDogAI)
+            {
+                if (dogPitches.Remove(__instance as MouthDogAI))
+                    Plugin.Logger.LogInfo("Eyeless dog: Died (removing cached reference)");
+                else
+                    Plugin.Logger.LogWarning("Eyeless dog: Just died but could not be found in the cache");
+            }
+        }
+
+        [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.ResetEnemyVariables))]
+        [HarmonyPostfix]
+        static void RoundManagerPostResetEnemyVariables()
+        {
+            dogPitches.Clear();
+        }
+
+        [HarmonyPatch(typeof(RoundManager), "Update")]
+        [HarmonyPostfix]
+        static void RoundManagerPostUpdate()
+        {
+            if (dogPitches.Count < 1)
+                return;
+
+            List<MouthDogAI> removeDogs = null;
+
+            foreach (MouthDogAI dog in dogPitches.Keys)
+            {
+                if (dog == null)
+                {
+                    Plugin.Logger.LogWarning("Tried to iterate over a missing dog in the cache");
+                    removeDogs ??= new();
+                    removeDogs.Add(dog);
+                    continue;
+                }
+
+                if (dog.isEnemyDead)
+                {
+                    Plugin.Logger.LogWarning("Dog died but was not removed from cache");
+                    removeDogs ??= new();
+                    removeDogs.Add(dog);
+                    continue;
+                }
+
+                if (dog.creatureVoice.pitch != dogPitches[dog] && !(bool)MOUTH_DOG_AI_IN_KILL_ANIMATION.GetValue(dog))
+                {
+                    dog.creatureVoice.pitch = dogPitches[dog];
+                    Plugin.Logger.LogWarning("Eyeless dog: Fix voice pitch now that kill sound is done");
+                }
+            }
+
+            if (removeDogs != null)
+            {
+                foreach (MouthDogAI removeDog in removeDogs)
+                    dogPitches.Remove(removeDog);
+                Plugin.Logger.LogInfo("Cleaned up dead/missing dog(s) in cache");
+            }
         }
     }
 }
