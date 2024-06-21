@@ -14,9 +14,9 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.3.0";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.4.0";
         internal static new ManualLogSource Logger;
-        internal static ConfigEntry<bool> configFixMasks;
+        internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder;
 
         void Awake()
         {
@@ -28,16 +28,20 @@ namespace EnemySoundFixes
                 true,
                 "(Host only, requires game restart) Fixes masks' broken audio intervals.\nDisabling this is useful if you use a voice mimicking mod (Skinwalkers, Mirage, etc.) or just find the masks to be too noisy.");
 
+            configThumperNoThunder = Config.Bind(
+                "Misc",
+                "ThumperNoThunder",
+                true,
+                "Thumpers no longer play thunder sound effects from their voice when they stop chasing after players.");
+
             // migrate from previous version if necessary
             if (configFixMasks.Value)
             {
                 bool dontFixMasks = Config.Bind("Misc", "DontFixMasks", false, "Legacy setting, use \"FixMasks\" instead").Value;
                 if (dontFixMasks)
-                {
                     configFixMasks.Value = false;
-                    Config.Save();
-                }
                 Config.Remove(Config["Misc", "DontFixMasks"].Definition);
+                Config.Save();
             }
 
             new Harmony(PLUGIN_GUID).PatchAll();
@@ -49,52 +53,90 @@ namespace EnemySoundFixes
     [HarmonyPatch]
     class EnemySoundFixesPatches
     {
-        static readonly FieldInfo CREATURE_VOICE = typeof(EnemyAI).GetField(nameof(EnemyAI.creatureVoice), BindingFlags.Instance | BindingFlags.Public);
-        static readonly FieldInfo MOUTH_DOG_AI_IN_KILL_ANIMATION = typeof(MouthDogAI).GetField("inKillAnimation", BindingFlags.Instance | BindingFlags.NonPublic);
-        const float TIME_PLAY_AUDIO_2 = 178f / 60f; // frame 178 at 60 fps - PlayAudio2 event
+        static readonly FieldInfo CREATURE_VOICE = AccessTools.Field(typeof(EnemyAI), nameof(EnemyAI.creatureVoice));
+        static readonly FieldInfo IS_ENEMY_DEAD = AccessTools.Field(typeof(EnemyAI), nameof(EnemyAI.isEnemyDead));
+        static readonly MethodInfo REALTIME_SINCE_STARTUP = AccessTools.DeclaredPropertyGetter(typeof(Time), nameof(Time.realtimeSinceStartup));
+        static readonly MethodInfo PLAY_ONE_SHOT = AccessTools.Method(typeof(AudioSource), nameof(AudioSource.PlayOneShot), new System.Type[]{typeof(AudioClip)});
+        static readonly MethodInfo HIT_ENEMY = AccessTools.Method(typeof(EnemyAI), nameof(EnemyAI.HitEnemy));
 
-        static AudioClip /*hitEnemyBody,*/ baboonTakeDamage;
-        static Dictionary<MouthDogAI, float> dogPitches = new();
+        const float TIME_PLAY_AUDIO_2 = 178f / 60f; // frame 178 at 60 fps - PlayAudio2 event
+        const float TIME_DROP_CARRIED_BODY = 5.01f; // 2s + 3.01s - MouthDogAI.KillPlayer enumerator
+
+        static AudioClip baboonTakeDamage, hitEnemyBody;
+
+        static Dictionary<MouthDogAI, (float Pitch, float Time)> dogPitches = new();
 
         [HarmonyPatch(typeof(QuickMenuManager), "Start")]
         [HarmonyPostfix]
         static void QuickMenuManagerPostStart(QuickMenuManager __instance)
         {
-            /*if (hitEnemyBody == null)
+            List<SpawnableEnemyWithRarity> allEnemies = new();
+            allEnemies.AddRange(__instance.testAllEnemiesLevel.Enemies);
+            allEnemies.AddRange(__instance.testAllEnemiesLevel.OutsideEnemies);
+            allEnemies.AddRange(__instance.testAllEnemiesLevel.DaytimeEnemies);
+
+            EnemyType mouthDog = null, flowerSnake = null;
+            foreach (SpawnableEnemyWithRarity enemy in allEnemies)
             {
-                SpawnableEnemyWithRarity enemy = __instance.testAllEnemiesLevel.Enemies.FirstOrDefault(spawnableEnemyWithRarity => spawnableEnemyWithRarity.enemyType.hitBodySFX.name == "HitEnemyBody");
-                if (enemy != null)
+                switch (enemy.enemyType.name)
+                {
+                    case "BaboonHawk":
+                        if (baboonTakeDamage == null)
+                        {
+                            baboonTakeDamage = enemy.enemyType.hitBodySFX;
+                            Plugin.Logger.LogInfo("Cached baboon hawk damage sound");
+                        }
+                        enemy.enemyType.hitBodySFX = null;
+                        Plugin.Logger.LogInfo("Overwritten baboon hawk damage sound");
+                        enemy.enemyType.enemyPrefab.GetComponent<BaboonBirdAI>().dieSFX = enemy.enemyType.deathSFX;
+                        Plugin.Logger.LogInfo("Overwritten missing baboon hawk death sound");
+                        break;
+                    case "Centipede":
+                        enemy.enemyType.enemyPrefab.GetComponent<CentipedeAI>().creatureSFX.loop = true;
+                        Plugin.Logger.LogInfo("Loop snare flea walking and clinging");
+                        break;
+                    case "Crawler":
+                        EnemyBehaviourState searching = enemy.enemyType.enemyPrefab.GetComponent<CrawlerAI>().enemyBehaviourStates.FirstOrDefault(enemyBehaviourState => enemyBehaviourState.name == "searching");
+                        if (searching != null)
+                        {
+                            searching.VoiceClip = null;
+                            searching.playOneShotVoice = false;
+                            Plugin.Logger.LogInfo("Remove thunder sound from thumper");
+                        }
+                        break;
+                    case "ForestGiant":
+                        enemy.enemyType.enemyPrefab.GetComponent<ForestGiantAI>().creatureSFX.spatialBlend = 1f;
+                        Plugin.Logger.LogInfo("Fix forest giant global audio volume");
+                        enemy.enemyType.hitBodySFX = StartOfRound.Instance.footstepSurfaces.FirstOrDefault(footstepSurface => footstepSurface.surfaceTag == "Wood").hitSurfaceSFX;
+                        Plugin.Logger.LogInfo("Overwritten missing forest giant hit sound");
+                        break;
+                    case "MouthDog":
+                        mouthDog = enemy.enemyType;
+                        break;
+                    case "FlowerSnake":
+                        flowerSnake = enemy.enemyType;
+                        break;
+                }
+
+                if (hitEnemyBody == null && enemy.enemyType.hitBodySFX.name == "HitEnemyBody")
                 {
                     hitEnemyBody = enemy.enemyType.hitBodySFX;
                     Plugin.Logger.LogInfo("Cached generic damage sound");
                 }
-            }*/
-            SpawnableEnemyWithRarity baboon = __instance.testAllEnemiesLevel.OutsideEnemies.FirstOrDefault(spawnableEnemyWithRarity => spawnableEnemyWithRarity.enemyType.name == "BaboonHawk");
-            if (baboon != null)
+            }
+
+            if (hitEnemyBody != null)
             {
-                if (baboonTakeDamage == null)
+                if (mouthDog != null)
                 {
-                    baboonTakeDamage = baboon.enemyType.hitBodySFX;
-                    Plugin.Logger.LogInfo("Cached baboon hawk damage sound");
+                    mouthDog.hitBodySFX = hitEnemyBody;
+                    Plugin.Logger.LogInfo("Overwritten missing eyeless dog hit sound");
                 }
-                baboon.enemyType.hitBodySFX = null; //hitEnemyBody
-                Plugin.Logger.LogInfo("Overwritten baboon hawk damage sound");
-                baboon.enemyType.enemyPrefab.GetComponent<BaboonBirdAI>().dieSFX = baboon.enemyType.deathSFX;
-                Plugin.Logger.LogInfo("Overwritten missing baboon hawk death sound");
-            }
-            SpawnableEnemyWithRarity centipede = __instance.testAllEnemiesLevel.Enemies.FirstOrDefault(spawnableEnemyWithRarity => spawnableEnemyWithRarity.enemyType.name == "Centipede");
-            if (centipede != null)
-            {
-                centipede.enemyType.enemyPrefab.GetComponent<CentipedeAI>().creatureSFX.loop = true;
-                Plugin.Logger.LogInfo("Loop snare flea walking and clinging");
-            }
-            SpawnableEnemyWithRarity giant = __instance.testAllEnemiesLevel.OutsideEnemies.FirstOrDefault(spawnableEnemyWithRarity => spawnableEnemyWithRarity.enemyType.name == "ForestGiant");
-            if (giant != null)
-            {
-                giant.enemyType.enemyPrefab.GetComponent<ForestGiantAI>().creatureSFX.spatialBlend = 1f;
-                Plugin.Logger.LogInfo("Fix forest giant global audio volume");
-                giant.enemyType.hitBodySFX = StartOfRound.Instance.footstepSurfaces.FirstOrDefault(footstepSurface => footstepSurface.surfaceTag == "Wood").hitSurfaceSFX;
-                Plugin.Logger.LogInfo("Overwritten missing forest giant hit sound");
+                if (flowerSnake != null)
+                {
+                    flowerSnake.hitBodySFX = hitEnemyBody;
+                    Plugin.Logger.LogInfo("Overwritten missing tulip snake hit sound");
+                }
             }
         }
 
@@ -105,7 +147,7 @@ namespace EnemySoundFixes
             __instance.creatureVoice.loop = false;
             __instance.creatureVoice.clip = null;
             __instance.creatureVoice.pitch = 1f;
-            // temporary workaround for creatureVoice.Stop()
+            // workaround for creatureVoice.Stop()
             __instance.creatureVoice.PlayOneShot(__instance.enemyType.deathSFX);
             Plugin.Logger.LogInfo("Nutcracker: Played backup death sound");
         }
@@ -114,19 +156,30 @@ namespace EnemySoundFixes
         [HarmonyPostfix]
         static void HoarderBugAIPostKillEnemy(HoarderBugAI __instance)
         {
-            // temporary workaround for creatureVoice.Stop()
+            // workaround for creatureVoice.Stop()
             __instance.creatureVoice.PlayOneShot(__instance.enemyType.deathSFX);
-            Plugin.Logger.LogInfo("Hoarding Bug: Played backup death sound");
+            Plugin.Logger.LogInfo("Hoarding bug: Played backup death sound");
         }
 
         [HarmonyPatch(typeof(BaboonBirdAI), nameof(BaboonBirdAI.HitEnemy))]
         [HarmonyPostfix]
-        static void BaboonBirdAIPostHitEnemy(BaboonBirdAI __instance)
+        static void BaboonBirdAIPostHitEnemy(BaboonBirdAI __instance, bool playHitSFX)
         {
-            if (!__instance.isEnemyDead && baboonTakeDamage != null)
+            if (playHitSFX)
             {
-                __instance.creatureVoice.PlayOneShot(baboonTakeDamage);
-                Plugin.Logger.LogInfo("Baboon hawk: Ouch");
+                if (!__instance.isEnemyDead)
+                {
+                    if (baboonTakeDamage != null)
+                    {
+                        __instance.creatureVoice.PlayOneShot(baboonTakeDamage);
+                        Plugin.Logger.LogInfo("Baboon hawk: Ouch");
+                    }
+                }
+                else if (hitEnemyBody != null)
+                {
+                    __instance.creatureSFX.PlayOneShot(hitEnemyBody);
+                    Plugin.Logger.LogInfo("Baboon hawk: Hit body");
+                }
             }
         }
 
@@ -139,15 +192,17 @@ namespace EnemySoundFixes
 
             for (int i = 0; i < codes.Count - 1; i++)
             {
-                //Plugin.Logger.LogInfo(codes[i]);
                 if (codes[i].opcode == OpCodes.Ldloc_1 && codes[i + 1].opcode == OpCodes.Ldfld && (FieldInfo)codes[i + 1].operand == CREATURE_VOICE)
                 {
                     codes[i].labels.Add(label);
-                    codes.Insert(i, new CodeInstruction(OpCodes.Ldloc_1, null));
-                    codes.Insert(i + 1, new CodeInstruction(OpCodes.Ldfld, typeof(EnemyAI).GetField(nameof(EnemyAI.isEnemyDead), BindingFlags.Instance | BindingFlags.Public)));
-                    codes.Insert(i + 2, new CodeInstruction(OpCodes.Brfalse, label));
-                    codes.Insert(i + 3, new CodeInstruction(OpCodes.Ldc_I4_0, null));
-                    codes.Insert(i + 4, new CodeInstruction(OpCodes.Ret, null));
+                    codes.InsertRange(i, new CodeInstruction[]
+                    {
+                        new CodeInstruction(OpCodes.Ldloc_1),
+                        new CodeInstruction(OpCodes.Ldfld, IS_ENEMY_DEAD),
+                        new CodeInstruction(OpCodes.Brfalse, label),
+                        new CodeInstruction(OpCodes.Ldc_I4_0),
+                        new CodeInstruction(OpCodes.Ret)
+                    });
                     Plugin.Logger.LogDebug("Transpiler: Patched Centipede shriek (added isEnemyDead check)");
                     break;
                 }
@@ -218,7 +273,6 @@ namespace EnemySoundFixes
 
             for (int i = 1; i < codes.Count - 1; i++)
             {
-                //Plugin.Logger.LogInfo(codes[i]);
                 if (codes[i].opcode == OpCodes.Ldfld && (FieldInfo)codes[i].operand == CREATURE_VOICE)
                 {
                     for (int j = i - 1; j <= i + 1; j++)
@@ -290,12 +344,22 @@ namespace EnemySoundFixes
                 {
                     PlayAudioAnimationEvent playAudioAnimationEvent = (__instance as ForestGiantAI).animationContainer.GetComponent<PlayAudioAnimationEvent>();
                     AudioSource closeWideSFX = playAudioAnimationEvent.audioToPlay;
-                    if (closeWideSFX.isPlaying && closeWideSFX.clip.name == "Roar" && closeWideSFX.time >= TIME_PLAY_AUDIO_2)
+                    if (closeWideSFX.isPlaying && closeWideSFX.clip?.name == "Roar" && closeWideSFX.time >= TIME_PLAY_AUDIO_2)
                     {
-                        // this unfortunately has the side effect of cancelling the roar early
-                        // this is... fine? it is helpful as an audio cue to indicate that you successfully rescued its victim
-                        // would be nice to fix it eventually, though
+                        float time = closeWideSFX.time;
                         closeWideSFX.Stop();
+                        // since we end the roar, restart it and try to seek back to the previous spot
+                        try
+                        {
+                            closeWideSFX.Play();
+                            closeWideSFX.time = time;
+                        }
+                        catch (System.Exception e)
+                        {
+                            Plugin.Logger.LogError("Forest keeper: Failed to seek audio");
+                            Plugin.Logger.LogError(e);
+                            closeWideSFX.Stop();
+                        }
                         Plugin.Logger.LogInfo("Forest keeper: Stop chewing (player was teleported)");
                         ParticleSystem bloodParticle = playAudioAnimationEvent.particle;
                         if (bloodParticle.isEmitting)
@@ -330,17 +394,14 @@ namespace EnemySoundFixes
 
             for (int i = 1; i < codes.Count; i++)
             {
-                //Plugin.Logger.LogInfo(codes[i]);
                 if (codes[i].opcode == OpCodes.Add)
                 {
                     for (int j = i - 1; j >= 0; j--)
                     {
-                        if (codes[j].opcode == OpCodes.Call && (MethodInfo)codes[j].operand == typeof(Time).GetMethod($"get_{nameof(Time.realtimeSinceStartup)}", BindingFlags.Static | BindingFlags.Public))
+                        if (codes[j].opcode == OpCodes.Call && (MethodInfo)codes[j].operand == REALTIME_SINCE_STARTUP)
                         {
                             codes[i].opcode = OpCodes.Nop;
-                            codes[i].operand = null;
                             codes[j].opcode = OpCodes.Nop;
-                            codes[j].operand = null;
                             Plugin.Logger.LogDebug("Transpiler: Fix periodic mask audio intervals");
                             return codes;
                         }
@@ -355,8 +416,11 @@ namespace EnemySoundFixes
         [HarmonyPostfix]
         static void AnimatedObjectTriggerPostStart(AnimatedObjectTrigger __instance)
         {
-            if (__instance.playParticle == null)
+            if (__instance.playAudiosInSequence && __instance.playParticle == null)
+            {
                 __instance.playParticleOnTimesTriggered = -1;
+                Plugin.Logger.LogWarning($"\"{__instance.name}.AnimatedObjectTrigger\" doesn't have particles attached");
+            }
         }
 
         [HarmonyPatch(typeof(ButlerEnemyAI), nameof(ButlerEnemyAI.Update))]
@@ -372,7 +436,7 @@ namespace EnemySoundFixes
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillEnemy))]
         [HarmonyPostfix]
-        static void MouthDogAIPostKillEnemy(ButlerEnemyAI __instance)
+        static void MouthDogAIPostKillEnemy(MouthDogAI __instance)
         {
             __instance.creatureVoice.mute = true;
             Plugin.Logger.LogInfo("Eyeless dog: Don't start breathing after death");
@@ -382,21 +446,51 @@ namespace EnemySoundFixes
         [HarmonyPostfix]
         static void MouthDogAIPostStart(MouthDogAI __instance)
         {
-            dogPitches.Add(__instance, __instance.creatureVoice.pitch);
-            Plugin.Logger.LogInfo($"Eyeless dog: Cached reference ({dogPitches.Count}/{__instance.enemyType.numberSpawned} total)");
+            System.Random random = new System.Random(/*(int)__instance.serverPosition.x + (int)__instance.serverPosition.y +*/ StartOfRound.Instance.randomMapSeed /*+ Object.FindObjectsOfType<MouthDogAI>().Length*/ + (int)__instance.NetworkObjectId);
+            if (random.Next(10) < 2)
+                __instance.creatureVoice.pitch = 0.6f + (0.7f * (float)random.NextDouble());
+            else
+                __instance.creatureVoice.pitch = 0.9f + (0.2f * (float)random.NextDouble());
+            Plugin.Logger.LogInfo("Eyeless dog: Reroll voice pitch (seeded random)");
+        }
+
+        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillPlayerClientRpc))]
+        [HarmonyPrefix]
+        static void MouthDogAIPreKillPlayerClientRpc(MouthDogAI __instance)
+        {
+            if (!dogPitches.ContainsKey(__instance))
+            {
+                dogPitches.Add(__instance, (__instance.creatureVoice.pitch, Time.timeSinceLevelLoad + TIME_DROP_CARRIED_BODY));
+                Plugin.Logger.LogInfo($"Eyeless dog #{__instance.GetInstanceID()}: Cached {__instance.creatureVoice.pitch}x voice pitch (kill animation will start)");
+            }
+            else
+                Plugin.Logger.LogWarning($"Eyeless dog #{__instance.GetInstanceID()}: Tried to initiate kill animation before ending previous kill animation");
+        }
+
+        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.Update))]
+        [HarmonyPostfix]
+        static void MouthDogAIPostUpdate(MouthDogAI __instance, bool ___inKillAnimation)
+        {
+            if (!__instance.isEnemyDead)
+            {
+                if (dogPitches.Count > 0 && !___inKillAnimation && dogPitches.TryGetValue(__instance, out (float Pitch, float Time) dogPitch) && Time.timeSinceLevelLoad >= dogPitch.Time)
+                {
+                    dogPitches.Remove(__instance);
+                    Plugin.Logger.LogInfo($"Eyeless dog #{__instance.GetInstanceID()}: Reset voice pitch now that kill sound is done ({__instance.creatureVoice.pitch}x -> {dogPitch.Pitch}x)");
+                    __instance.creatureVoice.pitch = dogPitch.Pitch;
+                }
+                if (!__instance.creatureVoice.isPlaying /*&& __instance.currentBehaviourStateIndex < 2*/)
+                    __instance.creatureVoice.Play();
+            }
         }
 
         [HarmonyPatch(typeof(EnemyAI), "SubtractFromPowerLevel")]
         [HarmonyPostfix]
         static void EnemyAIPostSubtractFromPowerLevel(EnemyAI __instance)
         {
-            if (__instance is MouthDogAI)
-            {
-                if (dogPitches.Remove(__instance as MouthDogAI))
-                    Plugin.Logger.LogInfo("Eyeless dog: Died (removing cached reference)");
-                else
-                    Plugin.Logger.LogWarning("Eyeless dog: Just died but could not be found in the cache");
-            }
+            MouthDogAI mouthDogAI = __instance as MouthDogAI;
+            if (mouthDogAI != null && dogPitches.Remove(mouthDogAI))
+                Plugin.Logger.LogInfo($"Eyeless dog #{__instance.GetInstanceID()}: Died mid kill animation (clean up cached reference)");
         }
 
         [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.ResetEnemyVariables))]
@@ -406,46 +500,112 @@ namespace EnemySoundFixes
             dogPitches.Clear();
         }
 
-        [HarmonyPatch(typeof(RoundManager), "Update")]
+        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.Update))]
         [HarmonyPostfix]
-        static void RoundManagerPostUpdate()
+        static void FlowerSnakeEnemyPostUpdate(FlowerSnakeEnemy __instance)
         {
-            if (dogPitches.Count < 1)
-                return;
-
-            List<MouthDogAI> removeDogs = null;
-
-            foreach (MouthDogAI dog in dogPitches.Keys)
+            if (__instance.flappingAudio.isPlaying)
             {
-                if (dog == null)
+                if (__instance.isEnemyDead)
                 {
-                    Plugin.Logger.LogWarning("Tried to iterate over a missing dog in the cache");
-                    removeDogs ??= new();
-                    removeDogs.Add(dog);
-                    continue;
+                    __instance.flappingAudio.Stop();
+                    __instance.flappingAudio.mute = true;
+                    Plugin.Logger.LogInfo("Tulip snake: Stop making noise while dead");
                 }
-
-                if (dog.isEnemyDead)
+                else if (__instance.flappingAudio.clip == __instance.enemyType.audioClips[9])
                 {
-                    Plugin.Logger.LogWarning("Dog died but was not removed from cache");
-                    removeDogs ??= new();
-                    removeDogs.Add(dog);
-                    continue;
+                    if (__instance.clingingToPlayer != null)
+                    {
+                        __instance.flappingAudio.Stop();
+                        Plugin.Logger.LogInfo("Tulip snake: Stop scurrying (latched to player)");
+                    }
                 }
-
-                if (dog.creatureVoice.pitch != dogPitches[dog] && !(bool)MOUTH_DOG_AI_IN_KILL_ANIMATION.GetValue(dog))
+                else if (__instance.clingingToPlayer == null)
                 {
-                    dog.creatureVoice.pitch = dogPitches[dog];
-                    Plugin.Logger.LogWarning("Eyeless dog: Fix voice pitch now that kill sound is done");
+                    __instance.flappingAudio.Stop();
+                    Plugin.Logger.LogInfo("Tulip snake: Stop flapping (no longer clinging)");
                 }
-            }
-
-            if (removeDogs != null)
-            {
-                foreach (MouthDogAI removeDog in removeDogs)
-                    dogPitches.Remove(removeDog);
-                Plugin.Logger.LogInfo("Cleaned up dead/missing dog(s) in cache");
             }
         }
+
+        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.StopLeapOnLocalClient))]
+        [HarmonyPostfix]
+        static void FlowerSnakeEnemyPostStopLeapOnLocalClient(FlowerSnakeEnemy __instance, bool landOnGround)
+        {
+            if (landOnGround && !__instance.isEnemyDead)
+            {
+                __instance.flappingAudio.pitch = Random.Range(0.8f, 1.2f);
+                Plugin.Logger.LogInfo("Tulip snake: Reroll scurry pitch (landed from leap)");
+            }
+        }
+
+        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.StopClingingOnLocalClient))]
+        [HarmonyPostfix]
+        static void FlowerSnakeEnemyPostStopClingingOnLocalClient(FlowerSnakeEnemy __instance)
+        {
+            if (!__instance.isEnemyDead)
+            {
+                __instance.flappingAudio.pitch = Random.Range(0.8f, 1.2f);
+                Plugin.Logger.LogInfo("Tulip snake: Reroll scurry pitch (dismounted player)");
+            }
+        }
+
+        [HarmonyPatch(typeof(MouthDogAI), "enterChaseMode", MethodType.Enumerator)]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> MouthDogAITransEnterChaseMode(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            for (int i = 1; i < codes.Count; i++)
+            {
+                if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == PLAY_ONE_SHOT && codes[i - 1].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 1].operand == AccessTools.Field(typeof(MouthDogAI), nameof(MouthDogAI.breathingSFX)))
+                {
+                    for (int j = i - 4; j <= i; j++)
+                        codes[j].opcode = OpCodes.Nop;
+                    Plugin.Logger.LogDebug("Transpiler: Fixed dog's overlapping breathing");
+                    break;
+                }
+            }
+
+            return codes;
+        }
+
+        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.OnCollideWithEnemy))]
+        [HarmonyPatch(typeof(BaboonBirdAI), nameof(BaboonBirdAI.OnCollideWithEnemy))]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> EnemyTransOnCollideWithEnemy(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            for (int i = 1; i < codes.Count; i++)
+            {
+                if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == HIT_ENEMY)
+                {
+                    codes.RemoveAt(i - 2);
+                    codes.InsertRange(i - 2, new CodeInstruction[]
+                    {
+                        new CodeInstruction(OpCodes.Ldarg_2),
+                        new CodeInstruction(OpCodes.Ldfld, IS_ENEMY_DEAD),
+                        new CodeInstruction(OpCodes.Ldc_I4_0),
+                        new CodeInstruction(OpCodes.Ceq)
+                    });
+                    Plugin.Logger.LogDebug("Transpiler: Don't play hit sound when attacking dead enemy");
+                    break;
+                }
+            }
+
+            return codes;
+        }
+
+        // since these enemies call creatureSFX.Stop()
+        // this needs more work to ensure hit sounds won't be duplicated
+        /*[HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.KillEnemy))]
+        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillEnemy))]
+        [HarmonyPostfix]
+        static void PostKillEnemy(EnemyAI __instance)
+        {
+            if (__instance.enemyHP == 0)
+                __instance.creatureSFX.PlayOneShot(hitEnemyBody);
+        }*/
     }
 }
