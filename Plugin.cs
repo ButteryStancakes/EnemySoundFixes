@@ -14,9 +14,9 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.4.0";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.5.0";
         internal static new ManualLogSource Logger;
-        internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder;
+        internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps;
 
         void Awake()
         {
@@ -27,6 +27,12 @@ namespace EnemySoundFixes
                 "FixMasks",
                 true,
                 "(Host only, requires game restart) Fixes masks' broken audio intervals.\nDisabling this is useful if you use a voice mimicking mod (Skinwalkers, Mirage, etc.) or just find the masks to be too noisy.");
+
+            configBetterMimicSteps = Config.Bind(
+                "Misc",
+                "BetterMimicSteps",
+                false,
+                "Mimic footstep volume and distance are altered to sound more accurate to actual players.");
 
             configThumperNoThunder = Config.Bind(
                 "Misc",
@@ -56,26 +62,30 @@ namespace EnemySoundFixes
         static readonly FieldInfo CREATURE_VOICE = AccessTools.Field(typeof(EnemyAI), nameof(EnemyAI.creatureVoice));
         static readonly FieldInfo IS_ENEMY_DEAD = AccessTools.Field(typeof(EnemyAI), nameof(EnemyAI.isEnemyDead));
         static readonly MethodInfo REALTIME_SINCE_STARTUP = AccessTools.DeclaredPropertyGetter(typeof(Time), nameof(Time.realtimeSinceStartup));
-        static readonly MethodInfo PLAY_ONE_SHOT = AccessTools.Method(typeof(AudioSource), nameof(AudioSource.PlayOneShot), new System.Type[]{typeof(AudioClip)});
+        static readonly MethodInfo PLAY_ONE_SHOT = AccessTools.Method(typeof(AudioSource), nameof(AudioSource.PlayOneShot), [typeof(AudioClip)]);
         static readonly MethodInfo HIT_ENEMY = AccessTools.Method(typeof(EnemyAI), nameof(EnemyAI.HitEnemy));
+        static readonly MethodInfo DAMAGE_PLAYER = AccessTools.Method(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayer));
 
         const float TIME_PLAY_AUDIO_2 = 178f / 60f; // frame 178 at 60 fps - PlayAudio2 event
         const float TIME_DROP_CARRIED_BODY = 5.01f; // 2s + 3.01s - MouthDogAI.KillPlayer enumerator
 
-        static AudioClip baboonTakeDamage, hitEnemyBody;
+        static AudioClip baboonTakeDamage/*, hitEnemyBody*/;
 
-        static Dictionary<MouthDogAI, (float Pitch, float Time)> dogPitches = new();
+        static Dictionary<MouthDogAI, (float Pitch, float Time)> dogPitches = [];
 
         [HarmonyPatch(typeof(QuickMenuManager), "Start")]
         [HarmonyPostfix]
         static void QuickMenuManagerPostStart(QuickMenuManager __instance)
         {
-            List<SpawnableEnemyWithRarity> allEnemies = new();
-            allEnemies.AddRange(__instance.testAllEnemiesLevel.Enemies);
-            allEnemies.AddRange(__instance.testAllEnemiesLevel.OutsideEnemies);
-            allEnemies.AddRange(__instance.testAllEnemiesLevel.DaytimeEnemies);
+            List<SpawnableEnemyWithRarity> allEnemies =
+            [
+                .. __instance.testAllEnemiesLevel.Enemies,
+                .. __instance.testAllEnemiesLevel.OutsideEnemies,
+                .. __instance.testAllEnemiesLevel.DaytimeEnemies,
+            ];
 
-            EnemyType mouthDog = null, flowerSnake = null;
+            EnemyType mouthDog = null/*, flowerSnake = null*/;
+            AudioClip hitEnemyBody = null;
             foreach (SpawnableEnemyWithRarity enemy in allEnemies)
             {
                 switch (enemy.enemyType.name)
@@ -96,12 +106,15 @@ namespace EnemySoundFixes
                         Plugin.Logger.LogInfo("Loop snare flea walking and clinging");
                         break;
                     case "Crawler":
-                        EnemyBehaviourState searching = enemy.enemyType.enemyPrefab.GetComponent<CrawlerAI>().enemyBehaviourStates.FirstOrDefault(enemyBehaviourState => enemyBehaviourState.name == "searching");
-                        if (searching != null)
+                        if (Plugin.configThumperNoThunder.Value)
                         {
-                            searching.VoiceClip = null;
-                            searching.playOneShotVoice = false;
-                            Plugin.Logger.LogInfo("Remove thunder sound from thumper");
+                            EnemyBehaviourState searching = enemy.enemyType.enemyPrefab.GetComponent<CrawlerAI>().enemyBehaviourStates.FirstOrDefault(enemyBehaviourState => enemyBehaviourState.name == "searching");
+                            if (searching != null)
+                            {
+                                searching.VoiceClip = null;
+                                searching.playOneShotVoice = false;
+                                Plugin.Logger.LogInfo("Remove thunder sound from thumper");
+                            }
                         }
                         break;
                     case "ForestGiant":
@@ -113,9 +126,9 @@ namespace EnemySoundFixes
                     case "MouthDog":
                         mouthDog = enemy.enemyType;
                         break;
-                    case "FlowerSnake":
+                    /*case "FlowerSnake":
                         flowerSnake = enemy.enemyType;
-                        break;
+                        break;*/
                 }
 
                 if (hitEnemyBody == null && enemy.enemyType.hitBodySFX.name == "HitEnemyBody")
@@ -132,11 +145,11 @@ namespace EnemySoundFixes
                     mouthDog.hitBodySFX = hitEnemyBody;
                     Plugin.Logger.LogInfo("Overwritten missing eyeless dog hit sound");
                 }
-                if (flowerSnake != null)
+                /*if (flowerSnake != null)
                 {
                     flowerSnake.hitBodySFX = hitEnemyBody;
                     Plugin.Logger.LogInfo("Overwritten missing tulip snake hit sound");
-                }
+                }*/
             }
         }
 
@@ -175,11 +188,11 @@ namespace EnemySoundFixes
                         Plugin.Logger.LogInfo("Baboon hawk: Ouch");
                     }
                 }
-                else if (hitEnemyBody != null)
+                /*else if (hitEnemyBody != null)
                 {
                     __instance.creatureSFX.PlayOneShot(hitEnemyBody);
                     Plugin.Logger.LogInfo("Baboon hawk: Hit body");
-                }
+                }*/
             }
         }
 
@@ -195,14 +208,14 @@ namespace EnemySoundFixes
                 if (codes[i].opcode == OpCodes.Ldloc_1 && codes[i + 1].opcode == OpCodes.Ldfld && (FieldInfo)codes[i + 1].operand == CREATURE_VOICE)
                 {
                     codes[i].labels.Add(label);
-                    codes.InsertRange(i, new CodeInstruction[]
-                    {
+                    codes.InsertRange(i,
+                    [
                         new CodeInstruction(OpCodes.Ldloc_1),
                         new CodeInstruction(OpCodes.Ldfld, IS_ENEMY_DEAD),
                         new CodeInstruction(OpCodes.Brfalse, label),
                         new CodeInstruction(OpCodes.Ldc_I4_0),
                         new CodeInstruction(OpCodes.Ret)
-                    });
+                    ]);
                     Plugin.Logger.LogDebug("Transpiler: Patched Centipede shriek (added isEnemyDead check)");
                     break;
                 }
@@ -215,7 +228,7 @@ namespace EnemySoundFixes
         [HarmonyPrefix]
         static void CentipedeAIPreUpdate(CentipedeAI __instance)
         {
-            if (__instance.creatureSFX.isPlaying && __instance.creatureSFX.clip.name == "CentipedeWalk" && (__instance.isEnemyDead || __instance.currentBehaviourState.name != "attacking"))
+            if (__instance.creatureSFX.isPlaying && __instance.creatureSFX.clip.name == "CentipedeWalk" && (__instance.isEnemyDead || __instance.currentBehaviourStateIndex != 2))
             {
                 __instance.creatureSFX.Stop();
                 Plugin.Logger.LogInfo("Snare flea: Stop walking while dead, clinging to player, or sneaking away");
@@ -235,7 +248,7 @@ namespace EnemySoundFixes
         [HarmonyPostfix]
         static void EnemyAIPostPlayAudioOfCurrentState(EnemyAI __instance)
         {
-            if (__instance is CentipedeAI && __instance.currentBehaviourState.name == "hiding" && __instance.creatureVoice.pitch > 1f)
+            if (__instance is CentipedeAI && __instance.currentBehaviourStateIndex == 1 && __instance.creatureVoice.pitch > 1f)
             {
                 __instance.creatureVoice.pitch = 1f;
                 Plugin.Logger.LogInfo("Snare flea: Reset \"voice\" pitch for attacking again");
@@ -246,7 +259,7 @@ namespace EnemySoundFixes
         [HarmonyPostfix]
         static void ForestGiantAIPostUpdate(ForestGiantAI __instance)
         {
-            if (__instance.stunNormalizedTimer > 0f || __instance.isEnemyDead || __instance.currentBehaviourState.name == "Burning")
+            if (__instance.stunNormalizedTimer > 0f || __instance.isEnemyDead || __instance.currentBehaviourStateIndex == 2)
             {
                 PlayAudioAnimationEvent playAudioAnimationEvent = __instance.animationContainer.GetComponent<PlayAudioAnimationEvent>();
                 AudioSource closeWideSFX = playAudioAnimationEvent.audioToPlay;
@@ -346,10 +359,10 @@ namespace EnemySoundFixes
                     AudioSource closeWideSFX = playAudioAnimationEvent.audioToPlay;
                     if (closeWideSFX.isPlaying && closeWideSFX.clip?.name == "Roar" && closeWideSFX.time >= TIME_PLAY_AUDIO_2)
                     {
-                        float time = closeWideSFX.time;
+                        //float time = closeWideSFX.time;
                         closeWideSFX.Stop();
-                        // since we end the roar, restart it and try to seek back to the previous spot
-                        try
+                        // this didn't seem to work as expected
+                        /*try
                         {
                             closeWideSFX.Play();
                             closeWideSFX.time = time;
@@ -359,7 +372,7 @@ namespace EnemySoundFixes
                             Plugin.Logger.LogError("Forest keeper: Failed to seek audio");
                             Plugin.Logger.LogError(e);
                             closeWideSFX.Stop();
-                        }
+                        }*/
                         Plugin.Logger.LogInfo("Forest keeper: Stop chewing (player was teleported)");
                         ParticleSystem bloodParticle = playAudioAnimationEvent.particle;
                         if (bloodParticle.isEmitting)
@@ -446,7 +459,7 @@ namespace EnemySoundFixes
         [HarmonyPostfix]
         static void MouthDogAIPostStart(MouthDogAI __instance)
         {
-            System.Random random = new System.Random(/*(int)__instance.serverPosition.x + (int)__instance.serverPosition.y +*/ StartOfRound.Instance.randomMapSeed /*+ Object.FindObjectsOfType<MouthDogAI>().Length*/ + (int)__instance.NetworkObjectId);
+            System.Random random = new(/*(int)__instance.serverPosition.x + (int)__instance.serverPosition.y +*/ StartOfRound.Instance.randomMapSeed /*+ Object.FindObjectsOfType<MouthDogAI>().Length*/ + (int)__instance.NetworkObjectId);
             if (random.Next(10) < 2)
                 __instance.creatureVoice.pitch = 0.6f + (0.7f * (float)random.NextDouble());
             else
@@ -572,6 +585,7 @@ namespace EnemySoundFixes
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.OnCollideWithEnemy))]
         [HarmonyPatch(typeof(BaboonBirdAI), nameof(BaboonBirdAI.OnCollideWithEnemy))]
+        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.OnCollideWithEnemy))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> EnemyTransOnCollideWithEnemy(IEnumerable<CodeInstruction> instructions)
         {
@@ -582,13 +596,13 @@ namespace EnemySoundFixes
                 if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == HIT_ENEMY)
                 {
                     codes.RemoveAt(i - 2);
-                    codes.InsertRange(i - 2, new CodeInstruction[]
-                    {
+                    codes.InsertRange(i - 2,
+                    [
                         new CodeInstruction(OpCodes.Ldarg_2),
                         new CodeInstruction(OpCodes.Ldfld, IS_ENEMY_DEAD),
                         new CodeInstruction(OpCodes.Ldc_I4_0),
                         new CodeInstruction(OpCodes.Ceq)
-                    });
+                    ]);
                     Plugin.Logger.LogDebug("Transpiler: Don't play hit sound when attacking dead enemy");
                     break;
                 }
@@ -597,15 +611,106 @@ namespace EnemySoundFixes
             return codes;
         }
 
-        // since these enemies call creatureSFX.Stop()
-        // this needs more work to ensure hit sounds won't be duplicated
-        /*[HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.KillEnemy))]
-        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillEnemy))]
-        [HarmonyPostfix]
-        static void PostKillEnemy(EnemyAI __instance)
+        [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayerFromOtherClientClientRpc))]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> PlayerControllerBTransDamagePlayerFromOtherClientClientRpc(IEnumerable<CodeInstruction> instructions)
         {
-            if (__instance.enemyHP == 0)
-                __instance.creatureSFX.PlayOneShot(hitEnemyBody);
-        }*/
+            List<CodeInstruction> codes = instructions.ToList();
+
+            for (int i = 3; i < codes.Count; i++)
+            {
+                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == DAMAGE_PLAYER)
+                {
+                    for (int j = i - 1; j > 0; j--)
+                    {
+                        if (codes[j].opcode == OpCodes.Ldarg_1 && codes[j + 1].opcode == OpCodes.Ldc_I4_1)
+                        {
+                            codes[j + 1].opcode = OpCodes.Ldc_I4_0; // hasDamageSFX: false
+                            Plugin.Logger.LogDebug("Transpiler: Melee weapons don't stack hit sounds on players");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return codes;
+        }
+
+        [HarmonyPatch(typeof(BushWolfEnemy), "HitTongueLocalClient")]
+        [HarmonyPostfix]
+        static void BushWolfEnemyPostHitTongueLocalClient(BushWolfEnemy __instance)
+        {
+            // need to call this again because it gets stopped by CancelReelingPlayerIn
+            __instance.creatureVoice.PlayOneShot(__instance.hitBushWolfSFX);
+            Plugin.Logger.LogInfo("Kidnapper fox: Bit my tongue");
+        }
+
+        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.Update))]
+        [HarmonyPostfix]
+        static void BushWolfEnemyPostUpdate(BushWolfEnemy __instance, bool ___dragging)
+        {
+            if ((!___dragging || __instance.isEnemyDead || __instance.stunNormalizedTimer > 0f) && __instance.creatureVoice.isPlaying && __instance.creatureVoice.clip == __instance.snarlSFX)
+            {
+                __instance.creatureVoice.clip = null;
+                Plugin.Logger.LogInfo("Kidnapper fox: Cancel snarl (failsafe)");
+            }
+        }
+
+        [HarmonyPatch(typeof(BushWolfEnemy), "CancelReelingPlayerIn")]
+        [HarmonyPrefix]
+        static void BushWolfEnemyPreCancelReelingPlayerIn(BushWolfEnemy __instance, ref bool ___dragging)
+        {
+            if (___dragging && __instance.isEnemyDead)
+            {
+                ___dragging = false;
+                Plugin.Logger.LogInfo("Kidnapper fox: Don't let dragging interrupt death voice");
+            }
+        }
+
+        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.HitEnemy))]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> BushWolfEnemyTransHitEnemy(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            MethodInfo cancelReelingPlayerIn = AccessTools.Method(typeof(BushWolfEnemy), "CancelReelingPlayerIn");
+            for (int i = codes.Count - 1; i >= 0; i--)
+            {
+                Label label = generator.DefineLabel();
+                codes[i].labels.Add(label);
+                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == cancelReelingPlayerIn)
+                {
+                    codes.InsertRange(i + 1, [
+                        new CodeInstruction(OpCodes.Ldarg_0),
+                        new CodeInstruction(OpCodes.Ldfld, IS_ENEMY_DEAD),
+                        new CodeInstruction(OpCodes.Brtrue, label)
+                    ]);
+                    Plugin.Logger.LogDebug("Transpiler: Kidnapper fox doesn't cry when dead");
+                }
+            }
+
+            return codes;
+        }
+
+        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.Start))]
+        [HarmonyPostfix]
+        static void MaskedPlayerEnemyPostStart(MaskedPlayerEnemy __instance)
+        {
+            if (!Plugin.configBetterMimicSteps.Value)
+                return;
+
+            AudioSource playerMovementAudio = GameNetworkManager.Instance?.localPlayerController?.movementAudio;
+            if (playerMovementAudio == null)
+                return;
+
+            __instance.movementAudio.transform.localPosition = new Vector3(0f, 0.278f, 0f);
+            __instance.movementAudio.volume = playerMovementAudio.volume;
+            __instance.movementAudio.dopplerLevel = playerMovementAudio.dopplerLevel;
+            __instance.movementAudio.spread = playerMovementAudio.spread;
+            __instance.movementAudio.rolloffMode = AudioRolloffMode.Custom;
+            foreach (AudioSourceCurveType audioSourceCurveType in System.Enum.GetValues(typeof(AudioSourceCurveType)))
+                __instance.movementAudio.SetCustomCurve(audioSourceCurveType, playerMovementAudio.GetCustomCurve(audioSourceCurveType));
+            Plugin.Logger.LogInfo("Mimic: Footsteps match players");
+        }
     }
 }
