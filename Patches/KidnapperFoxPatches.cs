@@ -27,6 +27,11 @@ namespace EnemySoundFixes.Patches
                 __instance.creatureVoice.clip = null;
                 Plugin.Logger.LogInfo("Kidnapper fox: Cancel snarl (failsafe)");
             }
+            if (__instance.isEnemyDead && __instance.spitParticle.isEmitting)
+            {
+                __instance.spitParticle.Stop();
+                Plugin.Logger.LogInfo("Kidnapper fox: Cancel drool");
+            }
         }
 
         [HarmonyPatch(typeof(BushWolfEnemy), "CancelReelingPlayerIn")]
