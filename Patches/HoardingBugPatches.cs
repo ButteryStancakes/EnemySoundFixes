@@ -7,11 +7,32 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(HoarderBugAI), nameof(HoarderBugAI.KillEnemy))]
         [HarmonyPostfix]
-        static void HoarderBugAIPostKillEnemy(HoarderBugAI __instance)
+        static void HoarderBugAIPostKillEnemy(HoarderBugAI __instance, bool destroy)
         {
-            // creatureVoice.Stop() gets called in original KillEnemy()
-            __instance.creatureVoice.PlayOneShot(__instance.enemyType.deathSFX);
-            Plugin.Logger.LogInfo("Hoarding bug: Played backup death sound");
+            // happens after creatureSFX.Stop()
+            if (GeneralPatches.playHitSound)
+            {
+                GeneralPatches.playHitSound = false;
+                if (!destroy)
+                {
+                    __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
+                    Plugin.Logger.LogInfo("Hoarding bug: Play hit sound on death");
+                }
+            }
+
+            if (!destroy)
+            {
+                // happens after creatureVoice.Stop()
+                __instance.creatureVoice.PlayOneShot(__instance.enemyType.deathSFX);
+                Plugin.Logger.LogInfo("Hoarding bug: Played backup death sound");
+            }
+        }
+
+        [HarmonyPatch(typeof(HoarderBugAI), nameof(HoarderBugAI.HitEnemy))]
+        [HarmonyPrefix]
+        static void HoarderBugAIPreHitEnemy(HoarderBugAI __instance, int force, bool playHitSFX)
+        {
+            GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= force;
         }
     }
 }

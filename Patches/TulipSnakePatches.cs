@@ -6,8 +6,6 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class TulipSnakePatches
     {
-        static bool tulipSnakePlayHitSound;
-
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.Update))]
         [HarmonyPostfix]
         static void FlowerSnakeEnemyPostUpdate(FlowerSnakeEnemy __instance)
@@ -63,19 +61,22 @@ namespace EnemySoundFixes.Patches
         static void FlowerSnakeEnemyPreHitEnemy(FlowerSnakeEnemy __instance, bool playHitSFX)
         {
             // so tulip snake can play hit sound when killed
-            tulipSnakePlayHitSound = playHitSFX && !__instance.isEnemyDead;
+            GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead;
         }
 
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.KillEnemy))]
         [HarmonyPostfix]
-        static void FlowerSnakeEnemyPostKillEnemy(FlowerSnakeEnemy __instance)
+        static void FlowerSnakeEnemyPostKillEnemy(FlowerSnakeEnemy __instance, bool destroy)
         {
             // happens after creatureSFX.Stop()
-            if (tulipSnakePlayHitSound)
+            if (GeneralPatches.playHitSound)
             {
-                tulipSnakePlayHitSound = false;
-                __instance.creatureSFX.PlayOneShot(References.hitEnemyBody);
-                Plugin.Logger.LogInfo("Tulip snake: Play hit sound");
+                GeneralPatches.playHitSound = false;
+                if (!destroy && References.hitEnemyBody != null)
+                {
+                    __instance.creatureSFX.PlayOneShot(References.hitEnemyBody);
+                    Plugin.Logger.LogInfo("Tulip snake: Squish");
+                }
             }
         }
     }

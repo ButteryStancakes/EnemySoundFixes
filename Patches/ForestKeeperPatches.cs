@@ -50,7 +50,7 @@ namespace EnemySoundFixes.Patches
                         codes[j].opcode = OpCodes.Nop;
                         codes[j].operand = null;
                     }
-                    Plugin.Logger.LogDebug("Transpiler: Don't interrupt forest keeper voice");
+                    Plugin.Logger.LogDebug("Transpiler (Forest Keeper): Don't interrupt voice");
                     break;
                 }
             }

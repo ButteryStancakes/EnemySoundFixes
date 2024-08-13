@@ -9,6 +9,8 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class GeneralPatches
     {
+        internal static bool playHitSound;
+
         [HarmonyPatch(typeof(QuickMenuManager), "Start")]
         [HarmonyPostfix]
         static void QuickMenuManagerPostStart(QuickMenuManager __instance)
@@ -53,10 +55,13 @@ namespace EnemySoundFixes.Patches
                         }
                         break;
                     case "ForestGiant":
-                        enemy.enemyType.enemyPrefab.GetComponent<ForestGiantAI>().creatureSFX.spatialBlend = 1f;
+						ForestGiantAI forestGiantAI = enemy.enemyType.enemyPrefab.GetComponent<ForestGiantAI>();
+                        forestGiantAI.creatureSFX.spatialBlend = 1f;
                         Plugin.Logger.LogInfo("Fix forest giant global audio volume");
                         enemy.enemyType.hitBodySFX = StartOfRound.Instance.footstepSurfaces.FirstOrDefault(footstepSurface => footstepSurface.surfaceTag == "Wood").hitSurfaceSFX;
                         Plugin.Logger.LogInfo("Overwritten missing forest giant hit sound");
+                        forestGiantAI.giantBurningAudio.volume = 0f;
+                        Plugin.Logger.LogInfo("Fix forest giant burning volume fade");
                         break;
                     case "MouthDog":
                         mouthDog = enemy.enemyType;

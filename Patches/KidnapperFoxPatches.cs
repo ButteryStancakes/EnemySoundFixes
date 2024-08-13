@@ -63,7 +63,7 @@ namespace EnemySoundFixes.Patches
                         new CodeInstruction(OpCodes.Ldfld, References.IS_ENEMY_DEAD),
                         new CodeInstruction(OpCodes.Brtrue, label)
                     ]);
-                    Plugin.Logger.LogDebug("Transpiler: Kidnapper fox doesn't cry when dead");
+                    Plugin.Logger.LogDebug("Transpiler (Kidnapper fox): Don't cry when dead");
                     break;
                 }
             }

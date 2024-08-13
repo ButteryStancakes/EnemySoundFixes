@@ -36,7 +36,7 @@ namespace EnemySoundFixes.Patches
                         if (codes[j].opcode == OpCodes.Ldarg_1 && codes[j + 1].opcode == OpCodes.Ldc_I4_1)
                         {
                             codes[j + 1].opcode = OpCodes.Ldc_I4_0; // hasDamageSFX: false
-                            Plugin.Logger.LogDebug("Transpiler: Melee weapons don't stack hit sounds on players");
+                            Plugin.Logger.LogDebug("Transpiler (Players): Melee weapons don't stack hit sounds");
                             break;
                         }
                     }

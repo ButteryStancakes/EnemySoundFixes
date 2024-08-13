@@ -7,8 +7,11 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(NutcrackerEnemyAI), nameof(NutcrackerEnemyAI.KillEnemy))]
         [HarmonyPostfix]
-        static void NutcrackerEnemyAIPostKillEnemy(NutcrackerEnemyAI __instance)
+        static void NutcrackerEnemyAIPostKillEnemy(NutcrackerEnemyAI __instance, bool destroy)
         {
+            if (destroy)
+                return;
+
             // stop the marching music
             __instance.creatureVoice.loop = false;
             __instance.creatureVoice.clip = null;

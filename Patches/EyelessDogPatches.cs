@@ -16,10 +16,24 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillEnemy))]
         [HarmonyPostfix]
-        static void MouthDogAIPostKillEnemy(MouthDogAI __instance)
+        static void MouthDogAIPostKillEnemy(MouthDogAI __instance, bool destroy)
         {
-            __instance.creatureVoice.mute = true;
-            Plugin.Logger.LogInfo("Eyeless dog: Don't start breathing after death");
+            // happens after creatureSFX.Stop()
+            if (GeneralPatches.playHitSound)
+            {
+                GeneralPatches.playHitSound = false;
+                if (!destroy && References.hitEnemyBody != null)
+                {
+                    __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
+                    Plugin.Logger.LogInfo("Mouth dog: Play hit sound on death");
+                }
+            }
+
+            if (!destroy)
+            {
+                __instance.creatureVoice.mute = true;
+                Plugin.Logger.LogInfo("Eyeless dog: Don't start breathing after death");
+            }
         }
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.Start))]
@@ -76,7 +90,7 @@ namespace EnemySoundFixes.Patches
                 {
                     for (int j = i - 4; j <= i; j++)
                         codes[j].opcode = OpCodes.Nop;
-                    Plugin.Logger.LogDebug("Transpiler: Fixed dog's overlapping breathing");
+                    Plugin.Logger.LogDebug("Transpiler (Eyeless dog): Fix overlapping breathing");
                     break;
                 }
             }
@@ -98,6 +112,13 @@ namespace EnemySoundFixes.Patches
         static void RoundManagerPostResetEnemyVariables()
         {
             dogPitches.Clear();
+        }
+
+        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.HitEnemy))]
+        [HarmonyPrefix]
+        static void MouthDogAIPreHitEnemy(MouthDogAI __instance, int force, bool playHitSFX)
+        {
+            GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= force;
         }
     }
 }

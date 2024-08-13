@@ -29,7 +29,7 @@ namespace EnemySoundFixes.Patches
                         {
                             codes[i].opcode = OpCodes.Nop;
                             codes[j].opcode = OpCodes.Nop;
-                            Plugin.Logger.LogDebug("Transpiler: Fix periodic mask audio intervals");
+                            Plugin.Logger.LogDebug("Transpiler (Periodic mask audio): Fix intervals");
                             return codes;
                         }
                     }
