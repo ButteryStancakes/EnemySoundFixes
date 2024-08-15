@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using UnityEngine;
 
 namespace EnemySoundFixes.Patches
 {
@@ -60,6 +61,75 @@ namespace EnemySoundFixes.Patches
             }
 
             return codes;
+        }
+
+        [HarmonyPatch(typeof(VehicleController), "SetVehicleAudioProperties")]
+        [HarmonyPrefix]
+        static void VehicleControllerPreSetVehicleAudioProperties(VehicleController __instance, AudioSource audio, ref bool audioActive)
+        {
+            if ((audio == __instance.rollingAudio || audio == __instance.skiddingAudio || audio == __instance.extremeStressAudio) && __instance.magnetedToShip)
+                audioActive = false;
+        }
+
+        [HarmonyPatch(typeof(VehicleController), "SetVehicleAudioProperties")]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> VehicleControllerTransSetVehicleAudioProperties(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            MethodInfo volume = AccessTools.DeclaredPropertyGetter(typeof(AudioSource), nameof(AudioSource.volume));
+            for (int i = 0; i < codes.Count - 2; i++)
+            {
+                if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == volume && codes[i + 1].opcode == OpCodes.Ldc_R4 && (float)codes[i + 1].operand == 0f && codes[i - 2].opcode == OpCodes.Bne_Un)
+                {
+                    codes[i + 1].operand = 0.001f;
+                    codes[i + 2].opcode = OpCodes.Bge;
+                    Plugin.Logger.LogDebug("Transpiler (Cruiser): Stop audio source when volume is close enough to zero");
+                    break;
+                }
+            }
+
+            return codes;
+        }
+
+        [HarmonyPatch(typeof(VehicleController), "LateUpdate")]
+        [HarmonyPostfix]
+        static void VehicleControllerPostLateUpdate(VehicleController __instance)
+        {
+            if (__instance.magnetedToShip && Plugin.configSpaceMutesCruiser.Value > CruiserMute.Nothing && StartOfRound.Instance.inShipPhase)
+            {
+                __instance.hornAudio.mute = true;
+                __instance.engineAudio1.mute = true;
+                __instance.engineAudio2.mute = true;
+                //__instance.rollingAudio.mute = true;
+                //__instance.skiddingAudio.mute = true;
+                __instance.turbulenceAudio.mute = true;
+                //__instance.hoodFireAudio.mute = true;
+                //__instance.extremeStressAudio.mute = true;
+                if (Plugin.configSpaceMutesCruiser.Value == CruiserMute.NotRadio)
+                {
+                    __instance.radioAudio.mute = false;
+                    __instance.radioInterference.mute = false;
+                }
+                else
+                {
+                    __instance.radioAudio.mute = true;
+                    __instance.radioInterference.mute = true;
+                }
+            }
+            else
+            {
+                __instance.hornAudio.mute = false;
+                __instance.engineAudio1.mute = false;
+                __instance.engineAudio2.mute = false;
+                //__instance.rollingAudio.mute = false;
+                //__instance.skiddingAudio.mute = false;
+                __instance.turbulenceAudio.mute = false;
+                //__instance.hoodFireAudio.mute = false;
+                //__instance.extremeStressAudio.mute = false;
+                __instance.radioAudio.mute = false;
+                __instance.radioInterference.mute = false;
+            }
         }
     }
 }

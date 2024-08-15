@@ -5,12 +5,20 @@ using BepInEx.Configuration;
 
 namespace EnemySoundFixes
 {
+    internal enum CruiserMute
+    {
+        Nothing = -1,
+        NotRadio,
+        All
+    }
+
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.5.3";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.5.4";
         internal static new ManualLogSource Logger;
         internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps;
+        internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
 
         void Awake()
         {
@@ -33,6 +41,12 @@ namespace EnemySoundFixes
                 "ThumperNoThunder",
                 true,
                 "Thumpers no longer play thunder sound effects from their voice when they stop chasing after players.");
+
+            configSpaceMutesCruiser = Config.Bind(
+                "Misc",
+                "SpaceMutesCruiser",
+                CruiserMute.NotRadio,
+                "What audio sources should be muted on the Cruiser when in orbit. (Engine sounds, the horn, the radio, etc.)");
 
             // migrate from previous version if necessary
             if (configFixMasks.Value)
