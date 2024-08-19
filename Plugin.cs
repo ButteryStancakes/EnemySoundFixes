@@ -15,7 +15,7 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.5.4";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.5.6";
         internal static new ManualLogSource Logger;
         internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;

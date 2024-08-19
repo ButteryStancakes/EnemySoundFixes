@@ -67,7 +67,7 @@ namespace EnemySoundFixes.Patches
         [HarmonyPrefix]
         static void VehicleControllerPreSetVehicleAudioProperties(VehicleController __instance, AudioSource audio, ref bool audioActive)
         {
-            if ((audio == __instance.rollingAudio || audio == __instance.skiddingAudio || audio == __instance.extremeStressAudio) && __instance.magnetedToShip)
+            if (audioActive && ((audio == __instance.extremeStressAudio && __instance.magnetedToShip) || ((audio == __instance.rollingAudio || audio == __instance.skiddingAudio) && (__instance.magnetedToShip || (!__instance.FrontLeftWheel.isGrounded && !__instance.FrontRightWheel.isGrounded && !__instance.BackLeftWheel.isGrounded && !__instance.FrontLeftWheel.isGrounded)))))
                 audioActive = false;
         }
 
