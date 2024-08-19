@@ -49,14 +49,16 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        // on second thought, even though it's dubious whether Zeekerss *intended* this clip to play at 1.7x pitch, it *does* nevertheless always play at 1.7x pitch in vanilla
-        /*[HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.KillEnemy))]
+        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.KillEnemy))]
         [HarmonyPostfix]
         static void CentipedeAIPostKillEnemy(CentipedeAI __instance)
         {
-            __instance.creatureVoice.pitch = Random.value > 0.5f ? 1f : 1.7f;
-            Plugin.Logger.LogInfo("Snare flea: Randomize death screech pitch");
-        }*/
+            __instance.creatureSFX.clip = null; // don't cancel hit sound in Update()
+
+            // on second thought, even though it's dubious whether Zeekerss *intended* this clip to play at 1.7x pitch, it *does* nevertheless always play at 1.7x pitch in vanilla
+            /*__instance.creatureVoice.pitch = Random.value > 0.5f ? 1f : 1.7f;
+            Plugin.Logger.LogInfo("Snare flea: Randomize death screech pitch");*/
+        }
 
         [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.PlayAudioOfCurrentState))]
         [HarmonyPostfix]
