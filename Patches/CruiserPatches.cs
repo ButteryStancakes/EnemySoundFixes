@@ -10,6 +10,8 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class CruiserPatches
     {
+        public static HangarShipDoor hangarShipDoor;
+
         [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.RevCarClientRpc))]
         [HarmonyPatch(typeof(VehicleController), "TryIgnition", MethodType.Enumerator)]
         [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.SetIgnition))]
@@ -96,7 +98,7 @@ namespace EnemySoundFixes.Patches
         [HarmonyPostfix]
         static void VehicleControllerPostLateUpdate(VehicleController __instance)
         {
-            if (__instance.magnetedToShip && Plugin.configSpaceMutesCruiser.Value > CruiserMute.Nothing && StartOfRound.Instance.inShipPhase)
+            if (__instance.magnetedToShip && Plugin.configSpaceMutesCruiser.Value > CruiserMute.Nothing && (StartOfRound.Instance.inShipPhase || !StartOfRound.Instance.shipDoorsEnabled))
             {
                 __instance.hornAudio.mute = true;
                 __instance.engineAudio1.mute = true;
