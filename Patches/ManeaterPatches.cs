@@ -6,6 +6,13 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class ManeaterPatches
     {
+        [HarmonyPatch(typeof(CaveDwellerAI), nameof(CaveDwellerAI.HitEnemy))]
+        [HarmonyPrefix]
+        static void CaveDwellerAIPreHitEnemy(CaveDwellerAI __instance, int force, bool playHitSFX)
+        {
+            GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= 1;
+        }
+
         [HarmonyPatch(typeof(CaveDwellerAI), nameof(CaveDwellerAI.KillEnemy))]
         [HarmonyPostfix]
         static void CaveDwellerAIPostKillEnemy(CaveDwellerAI __instance, bool destroy)
@@ -26,6 +33,18 @@ namespace EnemySoundFixes.Patches
             }
             __instance.creatureVoice.Stop();
             __instance.creatureVoice.PlayOneShot(__instance.dieSFX);
+
+            // creatureSFX.Stop() added in v64
+            if (GeneralPatches.playHitSound)
+            {
+                GeneralPatches.playHitSound = false;
+                if (!destroy)
+                {
+                    __instance.creatureSFX.Stop();
+                    __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
+                    Plugin.Logger.LogInfo("Maneater: Play hit sound on death");
+                }
+            }
         }
     }
 }
