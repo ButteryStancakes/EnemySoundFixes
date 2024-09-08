@@ -25,14 +25,14 @@ namespace EnemySoundFixes.Patches
                 if (!destroy && References.hitEnemyBody != null)
                 {
                     __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
-                    Plugin.Logger.LogInfo("Mouth dog: Play hit sound on death");
+                    Plugin.Logger.LogDebug("Mouth dog: Play hit sound on death");
                 }
             }
 
             if (!destroy)
             {
                 __instance.creatureVoice.mute = true;
-                Plugin.Logger.LogInfo("Eyeless dog: Don't start breathing after death");
+                Plugin.Logger.LogDebug("Eyeless dog: Don't start breathing after death");
             }
         }
 
@@ -45,7 +45,7 @@ namespace EnemySoundFixes.Patches
                 __instance.creatureVoice.pitch = 0.6f + (0.7f * (float)random.NextDouble());
             else
                 __instance.creatureVoice.pitch = 0.9f + (0.2f * (float)random.NextDouble());
-            Plugin.Logger.LogInfo("Eyeless dog: Reroll voice pitch (seeded random)");
+            Plugin.Logger.LogDebug("Eyeless dog: Reroll voice pitch (seeded random)");
         }
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillPlayerClientRpc))]
@@ -55,7 +55,7 @@ namespace EnemySoundFixes.Patches
             if (!dogPitches.ContainsKey(__instance))
             {
                 dogPitches.Add(__instance, (__instance.creatureVoice.pitch, Time.timeSinceLevelLoad + TIME_DROP_CARRIED_BODY));
-                Plugin.Logger.LogInfo($"Eyeless dog #{__instance.GetInstanceID()}: Cached {__instance.creatureVoice.pitch}x voice pitch (kill animation will start)");
+                Plugin.Logger.LogDebug($"Eyeless dog #{__instance.GetInstanceID()}: Cached {__instance.creatureVoice.pitch}x voice pitch (kill animation will start)");
             }
             else
                 Plugin.Logger.LogWarning($"Eyeless dog #{__instance.GetInstanceID()}: Tried to initiate kill animation before ending previous kill animation");
@@ -70,7 +70,7 @@ namespace EnemySoundFixes.Patches
                 if (dogPitches.Count > 0 && !___inKillAnimation && dogPitches.TryGetValue(__instance, out (float Pitch, float Time) dogPitch) && Time.timeSinceLevelLoad >= dogPitch.Time)
                 {
                     dogPitches.Remove(__instance);
-                    Plugin.Logger.LogInfo($"Eyeless dog #{__instance.GetInstanceID()}: Reset voice pitch now that kill sound is done ({__instance.creatureVoice.pitch}x -> {dogPitch.Pitch}x)");
+                    Plugin.Logger.LogDebug($"Eyeless dog #{__instance.GetInstanceID()}: Reset voice pitch now that kill sound is done ({__instance.creatureVoice.pitch}x -> {dogPitch.Pitch}x)");
                     __instance.creatureVoice.pitch = dogPitch.Pitch;
                 }
                 if (!__instance.creatureVoice.isPlaying /*&& __instance.currentBehaviourStateIndex < 2*/)
@@ -104,7 +104,7 @@ namespace EnemySoundFixes.Patches
         {
             MouthDogAI mouthDogAI = __instance as MouthDogAI;
             if (mouthDogAI != null && dogPitches.Remove(mouthDogAI))
-                Plugin.Logger.LogInfo($"Eyeless dog #{__instance.GetInstanceID()}: Died mid kill animation (clean up cached reference)");
+                Plugin.Logger.LogDebug($"Eyeless dog #{__instance.GetInstanceID()}: Died mid kill animation (clean up cached reference)");
         }
 
         [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.ResetEnemyVariables))]

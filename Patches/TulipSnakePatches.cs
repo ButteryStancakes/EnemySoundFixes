@@ -16,20 +16,20 @@ namespace EnemySoundFixes.Patches
                 {
                     __instance.flappingAudio.Stop();
                     __instance.flappingAudio.mute = true;
-                    Plugin.Logger.LogInfo("Tulip snake: Stop making noise while dead");
+                    Plugin.Logger.LogDebug("Tulip snake: Stop making noise while dead");
                 }
                 else if (__instance.flappingAudio.clip == __instance.enemyType.audioClips[9])
                 {
                     if (__instance.clingingToPlayer != null)
                     {
                         __instance.flappingAudio.Stop();
-                        Plugin.Logger.LogInfo("Tulip snake: Stop scurrying (latched to player)");
+                        Plugin.Logger.LogDebug("Tulip snake: Stop scurrying (latched to player)");
                     }
                 }
                 else if (__instance.clingingToPlayer == null)
                 {
                     __instance.flappingAudio.Stop();
-                    Plugin.Logger.LogInfo("Tulip snake: Stop flapping (no longer clinging)");
+                    Plugin.Logger.LogDebug("Tulip snake: Stop flapping (no longer clinging)");
                 }
             }
         }
@@ -41,7 +41,7 @@ namespace EnemySoundFixes.Patches
             if (landOnGround && !__instance.isEnemyDead)
             {
                 __instance.flappingAudio.pitch = Random.Range(0.8f, 1.2f);
-                Plugin.Logger.LogInfo("Tulip snake: Reroll scurry pitch (landed from leap)");
+                Plugin.Logger.LogDebug("Tulip snake: Reroll scurry pitch (landed from leap)");
             }
         }
 
@@ -52,7 +52,7 @@ namespace EnemySoundFixes.Patches
             if (!__instance.isEnemyDead)
             {
                 __instance.flappingAudio.pitch = Random.Range(0.8f, 1.2f);
-                Plugin.Logger.LogInfo("Tulip snake: Reroll scurry pitch (dismounted player)");
+                Plugin.Logger.LogDebug("Tulip snake: Reroll scurry pitch (dismounted player)");
             }
         }
 
@@ -75,7 +75,7 @@ namespace EnemySoundFixes.Patches
                 if (!destroy && References.hitEnemyBody != null)
                 {
                     __instance.creatureSFX.PlayOneShot(References.hitEnemyBody);
-                    Plugin.Logger.LogInfo("Tulip snake: Squish");
+                    Plugin.Logger.LogDebug("Tulip snake: Squish");
                 }
             }
         }

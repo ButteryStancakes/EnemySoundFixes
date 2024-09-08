@@ -15,7 +15,7 @@ namespace EnemySoundFixes.Patches
         {
             // need to call this again because it gets stopped by CancelReelingPlayerIn
             __instance.creatureVoice.PlayOneShot(__instance.hitBushWolfSFX);
-            Plugin.Logger.LogInfo("Kidnapper fox: Bit my tongue");
+            Plugin.Logger.LogDebug("Kidnapper fox: Bit my tongue");
         }
 
         [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.Update))]
@@ -25,12 +25,12 @@ namespace EnemySoundFixes.Patches
             if ((!___dragging || __instance.isEnemyDead || __instance.stunNormalizedTimer > 0f) && __instance.creatureVoice.isPlaying && __instance.creatureVoice.clip == __instance.snarlSFX)
             {
                 __instance.creatureVoice.clip = null;
-                Plugin.Logger.LogInfo("Kidnapper fox: Cancel snarl (failsafe)");
+                Plugin.Logger.LogDebug("Kidnapper fox: Cancel snarl (failsafe)");
             }
             if (__instance.isEnemyDead && __instance.spitParticle.isEmitting)
             {
                 __instance.spitParticle.Stop();
-                Plugin.Logger.LogInfo("Kidnapper fox: Cancel drool");
+                Plugin.Logger.LogDebug("Kidnapper fox: Cancel drool");
             }
         }
 
@@ -41,7 +41,7 @@ namespace EnemySoundFixes.Patches
             if (___dragging && __instance.isEnemyDead)
             {
                 ___dragging = false;
-                Plugin.Logger.LogInfo("Kidnapper fox: Don't let dragging interrupt death voice");
+                Plugin.Logger.LogDebug("Kidnapper fox: Don't let dragging interrupt death voice");
             }
         }
 

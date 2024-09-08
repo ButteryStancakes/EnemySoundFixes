@@ -14,16 +14,15 @@ namespace EnemySoundFixes.Patches
         [HarmonyPostfix]
         static void BaboonBirdAIPostHitEnemy(BaboonBirdAI __instance, bool playHitSFX)
         {
-            if (playHitSFX)
+            if (playHitSFX && !__instance.isEnemyDead)
             {
-                if (!__instance.isEnemyDead)
+                if (!__instance.isEnemyDead && References.baboonTakeDamage != null)
                 {
-                    if (References.baboonTakeDamage != null)
-                    {
-                        __instance.creatureVoice.PlayOneShot(References.baboonTakeDamage);
-                        Plugin.Logger.LogInfo("Baboon hawk: Ouch");
-                    }
+                    __instance.creatureVoice.PlayOneShot(References.baboonTakeDamage);
+                    Plugin.Logger.LogDebug("Baboon hawk: Ouch");
                 }
+                else if (References.hitEnemyBody != null)
+                    __instance.creatureSFX.PlayOneShot(References.hitEnemyBody);
             }
         }
 

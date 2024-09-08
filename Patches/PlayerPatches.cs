@@ -17,7 +17,7 @@ namespace EnemySoundFixes.Patches
             if (causeOfDeath == CauseOfDeath.Gravity && !fallDamage)
             {
                 fallDamage = true;
-                Plugin.Logger.LogInfo("Player: Treat Gravity damage as fall damage");
+                Plugin.Logger.LogDebug("Player: Treat Gravity damage as fall damage");
             }
         }
 

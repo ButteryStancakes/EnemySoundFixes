@@ -29,7 +29,7 @@ namespace EnemySoundFixes.Patches
                         new CodeInstruction(OpCodes.Ldc_I4_0),
                         new CodeInstruction(OpCodes.Ret)
                     ]);
-                    Plugin.Logger.LogDebug("Transpiler (Snare flea): Don't shriek when dead");
+                    Plugin.Logger.LogDebug("Transpiler (Snare flea): Don't shriek when dead (A)");
                     break;
                 }
             }
@@ -45,7 +45,7 @@ namespace EnemySoundFixes.Patches
             {
                 __instance.creatureSFX.Stop();
                 __instance.creatureSFX.clip = null; // don't block hit sound when attacking its dead body if it was killed in attacking state
-                Plugin.Logger.LogInfo("Snare flea: Stop walking while dead, clinging to player, or sneaking away");
+                Plugin.Logger.LogDebug("Snare flea: Stop walking while dead, clinging to player, or sneaking away");
             }
         }
 
@@ -57,7 +57,7 @@ namespace EnemySoundFixes.Patches
 
             // on second thought, even though it's dubious whether Zeekerss *intended* this clip to play at 1.7x pitch, it *does* nevertheless always play at 1.7x pitch in vanilla
             /*__instance.creatureVoice.pitch = Random.value > 0.5f ? 1f : 1.7f;
-            Plugin.Logger.LogInfo("Snare flea: Randomize death screech pitch");*/
+            Plugin.Logger.LogDebug("Snare flea: Randomize death screech pitch");*/
         }
 
         [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.PlayAudioOfCurrentState))]
@@ -67,7 +67,7 @@ namespace EnemySoundFixes.Patches
             if (__instance is CentipedeAI && __instance.currentBehaviourStateIndex == 1 && __instance.creatureVoice.pitch > 1f)
             {
                 __instance.creatureVoice.pitch = 1f;
-                Plugin.Logger.LogInfo("Snare flea: Reset \"voice\" pitch for attacking again");
+                Plugin.Logger.LogDebug("Snare flea: Reset \"voice\" pitch for attacking again");
             }
         }
 
@@ -81,6 +81,33 @@ namespace EnemySoundFixes.Patches
                 __instance.creatureSFX.Stop();
                 __instance.creatureSFX.clip = null;
             }
+        }
+
+        [HarmonyPatch(typeof(CentipedeAI), "fallFromCeiling", MethodType.Enumerator)]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> TransFallFromCeiling(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+            Label label = generator.DefineLabel();
+
+            FieldInfo shriekClips = AccessTools.Field(typeof(CentipedeAI), nameof(CentipedeAI.shriekClips));
+            for (int i = 8; i < codes.Count - 2; i++)
+            {
+                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == References.PLAY_RANDOM_CLIP && codes[i - 5].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 5].operand == shriekClips)
+                {
+                    codes[i + 2].labels.Add(label);
+                    codes.InsertRange(i - 8,
+                    [
+                        new CodeInstruction(OpCodes.Ldloc_1),
+                        new CodeInstruction(OpCodes.Ldfld, References.IS_ENEMY_DEAD),
+                        new CodeInstruction(OpCodes.Brtrue, label)
+                    ]);
+                    Plugin.Logger.LogDebug("Transpiler (Snare flea): Don't shriek when dead (B)");
+                    break;
+                }
+            }
+
+            return codes;
         }
     }
 }

@@ -16,6 +16,7 @@ namespace EnemySoundFixes
         internal static readonly MethodInfo STOP = AccessTools.Method(typeof(AudioSource), nameof(AudioSource.Stop), []);
         internal static readonly MethodInfo DAMAGE_PLAYER = AccessTools.Method(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayer));
         internal static readonly MethodInfo HIT_ENEMY = AccessTools.Method(typeof(EnemyAI), nameof(EnemyAI.HitEnemy));
+        internal static readonly MethodInfo PLAY_RANDOM_CLIP = AccessTools.Method(typeof(RoundManager), nameof(RoundManager.PlayRandomClip));
 
         internal static AudioClip baboonTakeDamage, hitEnemyBody;
     }

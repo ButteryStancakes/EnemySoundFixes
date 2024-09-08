@@ -19,7 +19,7 @@ namespace EnemySoundFixes.Patches
 
             // can't just assign dieSFX because it gets canceled by creatureVoice.Stop() in original KillEnemy()
             __instance.creatureVoice.PlayOneShot(__instance.enemyType.deathSFX);
-            Plugin.Logger.LogInfo("Nutcracker: Played death sound");
+            Plugin.Logger.LogDebug("Nutcracker: Played death sound");
         }
     }
 }

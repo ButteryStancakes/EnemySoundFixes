@@ -20,6 +20,18 @@ namespace EnemySoundFixes.Patches
             if (destroy)
                 return;
 
+            // creatureSFX.Stop() added in v64
+            if (GeneralPatches.playHitSound)
+            {
+                GeneralPatches.playHitSound = false;
+                if (!destroy)
+                {
+                    __instance.creatureSFX.Stop();
+                    __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
+                    Plugin.Logger.LogDebug("Maneater: Play hit sound on death");
+                }
+            }
+
             foreach (AudioSource maneaterAudio in new AudioSource[]{
                 __instance.clickingAudio1,
                 __instance.clickingAudio2,
@@ -33,18 +45,7 @@ namespace EnemySoundFixes.Patches
             }
             __instance.creatureVoice.Stop();
             __instance.creatureVoice.PlayOneShot(__instance.dieSFX);
-
-            // creatureSFX.Stop() added in v64
-            if (GeneralPatches.playHitSound)
-            {
-                GeneralPatches.playHitSound = false;
-                if (!destroy)
-                {
-                    __instance.creatureSFX.Stop();
-                    __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
-                    Plugin.Logger.LogInfo("Maneater: Play hit sound on death");
-                }
-            }
+            Plugin.Logger.LogDebug("Maneater: Played backup death sound");
         }
     }
 }

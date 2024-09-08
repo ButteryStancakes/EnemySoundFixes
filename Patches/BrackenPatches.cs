@@ -23,7 +23,7 @@ namespace EnemySoundFixes.Patches
                 if (!destroy)
                 {
                     __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
-                    Plugin.Logger.LogInfo("Bracken: Play hit sound on death");
+                    Plugin.Logger.LogDebug("Bracken: Play hit sound on death");
                 }
             }
         }

@@ -12,7 +12,7 @@ namespace EnemySoundFixes.Patches
             if (__instance.isEnemyDead && __instance.buzzingAmbience.isPlaying && __instance.creatureAnimator.GetBool("popFinish"))
             {
                 __instance.buzzingAmbience.Stop();
-                Plugin.Logger.LogInfo("Butler: Stop buzzing (bugs are free)");
+                Plugin.Logger.LogDebug("Butler: Stop buzzing (bugs are free)");
             }
         }
     }

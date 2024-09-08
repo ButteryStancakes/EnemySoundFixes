@@ -16,7 +16,7 @@ namespace EnemySoundFixes.Patches
                 if (!destroy)
                 {
                     __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
-                    Plugin.Logger.LogInfo("Hoarding bug: Play hit sound on death");
+                    Plugin.Logger.LogDebug("Hoarding bug: Play hit sound on death");
                 }
             }
 
@@ -24,7 +24,7 @@ namespace EnemySoundFixes.Patches
             {
                 // happens after creatureVoice.Stop()
                 __instance.creatureVoice.PlayOneShot(__instance.enemyType.deathSFX);
-                Plugin.Logger.LogInfo("Hoarding bug: Played backup death sound");
+                Plugin.Logger.LogDebug("Hoarding bug: Played backup death sound");
             }
         }
 

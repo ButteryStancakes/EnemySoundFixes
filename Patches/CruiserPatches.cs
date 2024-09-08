@@ -10,8 +10,6 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class CruiserPatches
     {
-        public static HangarShipDoor hangarShipDoor;
-
         [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.RevCarClientRpc))]
         [HarmonyPatch(typeof(VehicleController), "TryIgnition", MethodType.Enumerator)]
         [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.SetIgnition))]

@@ -23,13 +23,13 @@ namespace EnemySoundFixes.Patches
                 if (closeWideSFX.isPlaying)
                 {
                     closeWideSFX.Stop();
-                    Plugin.Logger.LogInfo("Forest keeper: Stop chewing (eating animation interrupted)");
+                    Plugin.Logger.LogDebug("Forest keeper: Stop chewing (eating animation interrupted)");
                 }
                 ParticleSystem bloodParticle = playAudioAnimationEvent.particle;
                 if (bloodParticle.isEmitting)
                 {
                     bloodParticle.Stop();
-                    Plugin.Logger.LogInfo("Forest keeper: Stop spraying blood from mouth (eating animation interrupted)");
+                    Plugin.Logger.LogDebug("Forest keeper: Stop spraying blood from mouth (eating animation interrupted)");
                 }
             }
         }
@@ -63,7 +63,7 @@ namespace EnemySoundFixes.Patches
         static void ForestGiantAIPostAnimationEventA(ForestGiantAI __instance)
         {
             __instance.creatureSFX.PlayOneShot(__instance.giantFall);
-            Plugin.Logger.LogInfo("Forest keeper: Fallen down");
+            Plugin.Logger.LogDebug("Forest keeper: Fallen down");
         }
 
         [HarmonyPatch(typeof(PlayAudioAnimationEvent), nameof(PlayAudioAnimationEvent.PlayAudio2))]
@@ -76,10 +76,10 @@ namespace EnemySoundFixes.Patches
                 if (forestGiantAI.inSpecialAnimationWithPlayer != null && forestGiantAI.inSpecialAnimationWithPlayer.inAnimationWithEnemy == forestGiantAI)
                 {
                     __instance.audioToPlay.PlayOneShot(__instance.audioClip2);
-                    Plugin.Logger.LogInfo("Forest keeper: Play bite sound effect with overlap");
+                    Plugin.Logger.LogDebug("Forest keeper: Play bite sound effect with overlap");
                 }
                 else
-                    Plugin.Logger.LogInfo("Forest keeper: Don't bite (player was teleported)");
+                    Plugin.Logger.LogDebug("Forest keeper: Don't bite (player was teleported)");
 
                 return false;
             }
@@ -96,7 +96,7 @@ namespace EnemySoundFixes.Patches
                 EnemyAI enemyAI = __instance.GetComponent<EnemyAnimationEvent>().mainScript;
                 if (enemyAI.inSpecialAnimationWithPlayer == null || enemyAI.inSpecialAnimationWithPlayer.inAnimationWithEnemy != enemyAI)
                 {
-                    Plugin.Logger.LogInfo("Forest keeper: Don't spray blood (player was teleported)");
+                    Plugin.Logger.LogDebug("Forest keeper: Don't spray blood (player was teleported)");
                     return false;
                 }
             }
@@ -130,12 +130,12 @@ namespace EnemySoundFixes.Patches
                             Plugin.Logger.LogError(e);
                             closeWideSFX.Stop();
                         }*/
-                        Plugin.Logger.LogInfo("Forest keeper: Stop chewing (player was teleported)");
+                        Plugin.Logger.LogDebug("Forest keeper: Stop chewing (player was teleported)");
                         ParticleSystem bloodParticle = playAudioAnimationEvent.particle;
                         if (bloodParticle.isEmitting)
                         {
                             bloodParticle.Stop();
-                            Plugin.Logger.LogInfo("Forest keeper: Stop spraying blood from mouth (player was teleported)");
+                            Plugin.Logger.LogDebug("Forest keeper: Stop spraying blood from mouth (player was teleported)");
                         }
                     }
                 }

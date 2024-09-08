@@ -57,7 +57,7 @@ namespace EnemySoundFixes.Patches
             __instance.movementAudio.rolloffMode = AudioRolloffMode.Custom;
             foreach (AudioSourceCurveType audioSourceCurveType in System.Enum.GetValues(typeof(AudioSourceCurveType)))
                 __instance.movementAudio.SetCustomCurve(audioSourceCurveType, playerMovementAudio.GetCustomCurve(audioSourceCurveType));
-            Plugin.Logger.LogInfo("Mimic: Footsteps match players");
+            Plugin.Logger.LogDebug("Mimic: Footsteps match players");
         }
     }
 }
