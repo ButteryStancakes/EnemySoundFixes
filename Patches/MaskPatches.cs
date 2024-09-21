@@ -59,5 +59,28 @@ namespace EnemySoundFixes.Patches
                 __instance.movementAudio.SetCustomCurve(audioSourceCurveType, playerMovementAudio.GetCustomCurve(audioSourceCurveType));
             Plugin.Logger.LogDebug("Mimic: Footsteps match players");
         }
+
+        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.HitEnemy))]
+        [HarmonyPrefix]
+        static void MaskedPlayerEnemyPreHitEnemy(MaskedPlayerEnemy __instance, int force, bool playHitSFX)
+        {
+            GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= force;
+        }
+
+        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.KillEnemy))]
+        [HarmonyPostfix]
+        static void MaskedPlayerEnemyPostKillEnemy(MaskedPlayerEnemy __instance, bool destroy)
+        {
+            // happens after creatureSFX.Stop() in CancelSpecialAnimationWithPlayer -> FinishKillAnimation
+            if (GeneralPatches.playHitSound)
+            {
+                GeneralPatches.playHitSound = false;
+                if (!destroy)
+                {
+                    __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
+                    Plugin.Logger.LogDebug("Mimic: Play hit sound on death");
+                }
+            }
+        }
     }
 }
