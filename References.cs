@@ -19,5 +19,6 @@ namespace EnemySoundFixes
         internal static readonly MethodInfo PLAY_RANDOM_CLIP = AccessTools.Method(typeof(RoundManager), nameof(RoundManager.PlayRandomClip));
 
         internal static AudioClip baboonTakeDamage, hitEnemyBody;
+        internal static AudioClip[] woodenDoorOpen, woodenDoorClose;
     }
 }

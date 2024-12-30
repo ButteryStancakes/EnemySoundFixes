@@ -10,6 +10,8 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class MaskPatches
     {
+        static EntranceTeleport mainEntranceScript;
+
         [HarmonyPatch(typeof(RandomPeriodicAudioPlayer), "Update")]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> RandomPeriodicAudioPlayerTransUpdate(IEnumerable<CodeInstruction> instructions)
@@ -80,6 +82,44 @@ namespace EnemySoundFixes.Patches
                     __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
                     Plugin.Logger.LogDebug("Mimic: Play hit sound on death");
                 }
+            }
+        }
+
+        [HarmonyPatch(typeof(MaskedPlayerEnemy), "TeleportMaskedEnemy")]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> TransTeleportMaskedEnemy(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            MethodInfo findMainEntranceScript = AccessTools.Method(typeof(RoundManager), nameof(RoundManager.FindMainEntranceScript));
+            for (int i = codes.Count - 2; i >= 0; i--)
+            {
+                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == findMainEntranceScript)
+                {
+                    codes.RemoveAt(i);
+                    codes.RemoveAt(i - 1);
+                    Plugin.Logger.LogDebug("Transpiler (Mimic teleport): Remove old sound code");
+                    return codes;
+                }
+                else
+                    codes.RemoveAt(i);
+            }
+
+            Plugin.Logger.LogError("Mimic teleport transpiler failed");
+            return instructions;
+        }
+
+        [HarmonyPatch(typeof(MaskedPlayerEnemy), "TeleportMaskedEnemy")]
+        [HarmonyPostfix]
+        static void PostTeleportMaskedEnemy()
+        {
+            if (mainEntranceScript == null)
+                mainEntranceScript = Object.FindObjectsOfType<EntranceTeleport>()?.FirstOrDefault(entranceTeleport => entranceTeleport.entranceId == 0);
+
+            if (mainEntranceScript != null)
+            {
+                mainEntranceScript.PlayAudioAtTeleportPositions();
+                Plugin.Logger.LogDebug("Mimic: Play door sound");
             }
         }
     }

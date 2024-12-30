@@ -18,7 +18,7 @@ namespace EnemySoundFixes.Patches
                     __instance.flappingAudio.mute = true;
                     Plugin.Logger.LogDebug("Tulip snake: Stop making noise while dead");
                 }
-                else if (__instance.flappingAudio.clip == __instance.enemyType.audioClips[9])
+                /*else if (__instance.flappingAudio.clip == __instance.enemyType.audioClips[9])
                 {
                     if (__instance.clingingToPlayer != null)
                     {
@@ -30,7 +30,7 @@ namespace EnemySoundFixes.Patches
                 {
                     __instance.flappingAudio.Stop();
                     Plugin.Logger.LogDebug("Tulip snake: Stop flapping (no longer clinging)");
-                }
+                }*/
             }
         }
 

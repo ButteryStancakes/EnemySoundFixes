@@ -15,9 +15,9 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.5.10";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.6.0";
         internal static new ManualLogSource Logger;
-        internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps;
+        internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
 
         void Awake()
@@ -47,6 +47,12 @@ namespace EnemySoundFixes
                 "SpaceMutesCruiser",
                 CruiserMute.NotRadio,
                 "What audio sources should be muted on the Cruiser when in orbit. (Engine sounds, the horn, the radio, etc.)");
+
+            configFixDoorSounds = Config.Bind(
+                "Misc",
+                "FixDoorSounds",
+                true,
+                "Fixes backwards open/close sounds on factory doors, breaker boxes, and storage locker doors. Fixes Rend and Adamance cabin doors using steel door sounds.");
 
             // migrate from previous version if necessary
             if (configFixMasks.Value)

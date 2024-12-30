@@ -1,8 +1,12 @@
-﻿using HarmonyLib;
+﻿using DunGen;
+using DunGen.Graph;
+using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace EnemySoundFixes.Patches
 {
@@ -10,6 +14,8 @@ namespace EnemySoundFixes.Patches
     class GeneralPatches
     {
         internal static bool playHitSound;
+
+        static bool patchedDoorSfx;
 
         [HarmonyPatch(typeof(QuickMenuManager), "Start")]
         [HarmonyPostfix]
@@ -141,6 +147,112 @@ namespace EnemySoundFixes.Patches
             }
 
             return codes;
+        }
+
+        [HarmonyPatch(typeof(EntranceTeleport), nameof(EntranceTeleport.PlayAudioAtTeleportPositions))]
+        [HarmonyPrefix]
+        static bool EntranceTeleportPlayAudioAtTeleportPositions(EntranceTeleport __instance, AudioSource ___exitPointAudio)
+        {
+            if (__instance.doorAudios == null || __instance.doorAudios.Length < 1)
+                return false;
+
+            AudioClip doorAudio = __instance.doorAudios[Random.Range(0, __instance.doorAudios.Length)];
+
+            __instance.entrancePointAudio.PlayOneShot(doorAudio);
+            WalkieTalkie.TransmitOneShotAudio(__instance.entrancePointAudio, doorAudio);
+            ___exitPointAudio.PlayOneShot(doorAudio);
+            WalkieTalkie.TransmitOneShotAudio(___exitPointAudio, doorAudio);
+
+            return false;
+        }
+
+        [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.FinishGeneratingNewLevelClientRpc))]
+        [HarmonyPostfix]
+        static void PostFinishGeneratingNewLevelClientRpc()
+        {
+            if (!patchedDoorSfx)
+            {
+                patchedDoorSfx = true;
+
+                if (Plugin.configFixDoorSounds.Value)
+                {
+                    string cabinDoor = null;
+                    if (StartOfRound.Instance.currentLevel.sceneName == "Level5Rend")
+                        cabinDoor = "/Environment/Map/SnowCabin/FancyDoorMapModel/SteelDoor (1)/DoorMesh/Cube";
+                    else if (StartOfRound.Instance.currentLevel.sceneName == "Level10Adamance")
+                        cabinDoor = "/Environment/SnowCabin/FancyDoorMapModel/SteelDoor (1)/DoorMesh/Cube";
+
+                    if (!string.IsNullOrEmpty(cabinDoor) && References.woodenDoorOpen != null && References.woodenDoorOpen.Length > 0 && References.woodenDoorClose != null && References.woodenDoorClose.Length > 0)
+                    {
+                        AnimatedObjectTrigger door = GameObject.Find(cabinDoor)?.GetComponent<AnimatedObjectTrigger>();
+                        if (door != null)
+                        {
+                            door.boolFalseAudios = References.woodenDoorClose;
+                            door.boolTrueAudios = References.woodenDoorOpen;
+                            Plugin.Logger.LogDebug("Overwritten cabin door sounds");
+                        }
+                    }
+
+                    foreach (AnimatedObjectTrigger animatedObjectTrigger in Object.FindObjectsOfType<AnimatedObjectTrigger>())
+                    {
+                        if (animatedObjectTrigger.thisAudioSource != null)
+                        {
+                            Renderer rend = animatedObjectTrigger.transform.parent?.GetComponent<Renderer>();
+                            if (animatedObjectTrigger.name == "PowerBoxDoor" || animatedObjectTrigger.thisAudioSource.name == "storage door" || (rend != null && rend.sharedMaterials.Length == 7))
+                            {
+                                AudioClip[] temp = (AudioClip[])animatedObjectTrigger.boolFalseAudios.Clone();
+                                animatedObjectTrigger.boolFalseAudios = (AudioClip[])animatedObjectTrigger.boolTrueAudios.Clone();
+                                animatedObjectTrigger.boolTrueAudios = temp;
+                                Plugin.Logger.LogDebug($"{animatedObjectTrigger.name}: AnimatedObjectTrigger audios");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.EndOfGameClientRpc))]
+        [HarmonyPatch(typeof(GameNetworkManager), nameof(GameNetworkManager.Disconnect))]
+        [HarmonyPostfix]
+        static void ResetLoadState()
+        {
+            patchedDoorSfx = false;
+        }
+
+        [HarmonyPatch(typeof(RoundManager), "Awake")]
+        [HarmonyPostfix]
+        static void RoundManagerPostAwake(RoundManager __instance)
+        {
+            if (References.woodenDoorOpen == null || References.woodenDoorOpen.Length < 1 || References.woodenDoorClose == null || References.woodenDoorClose.Length < 1)
+            {
+                IndoorMapType manor = __instance.dungeonFlowTypes.FirstOrDefault(dungeonFlowType => dungeonFlowType.dungeonFlow?.name == "Level2Flow");
+                if (manor != null)
+                {
+                    foreach (GraphNode node in manor.dungeonFlow.Nodes)
+                    {
+                        foreach (TileSet tileSet in node.TileSets)
+                        {
+                            if (tileSet.name == "Level2HallwayTiles")
+                            {
+                                GameObject manorStartRoom = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "ManorStartRoom")?.Value;
+                                if (manorStartRoom != null)
+                                {
+                                    // fun!
+                                    AnimatedObjectTrigger manorDoor = manorStartRoom.transform.Find("Doorways")?.GetComponentInChildren<Doorway>()?.ConnectorPrefabWeights?.FirstOrDefault(prefab => prefab.GameObject.name == "FancyDoorMapSpawn")?.GameObject.GetComponent<SpawnSyncedObject>()?.spawnPrefab?.GetComponentInChildren<AnimatedObjectTrigger>();
+
+                                    if (manorDoor != null)
+                                    {
+                                        References.woodenDoorClose = manorDoor.boolFalseAudios;
+                                        References.woodenDoorOpen = manorDoor.boolTrueAudios;
+                                        Plugin.Logger.LogDebug("Cached wooden door sounds");
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
