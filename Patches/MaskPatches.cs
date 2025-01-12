@@ -87,6 +87,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(MaskedPlayerEnemy), "TeleportMaskedEnemy")]
         [HarmonyTranspiler]
+        [HarmonyPriority(Priority.First)]
         static IEnumerable<CodeInstruction> TransTeleportMaskedEnemy(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();

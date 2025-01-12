@@ -2,6 +2,8 @@
 using BepInEx.Logging;
 using HarmonyLib;
 using BepInEx.Configuration;
+using BepInEx.Bootstrap;
+using UnityEngine.Android;
 
 namespace EnemySoundFixes
 {
@@ -13,16 +15,27 @@ namespace EnemySoundFixes
     }
 
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
+    [BepInDependency(GUID_SOUND_API, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.6.0";
+        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.6.2";
         internal static new ManualLogSource Logger;
+
         internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
+
+        const string GUID_SOUND_API = "me.loaforc.soundapi";
+        internal static bool INSTALLED_SOUND_API;
 
         void Awake()
         {
             Logger = base.Logger;
+
+            if (Chainloader.PluginInfos.ContainsKey(GUID_SOUND_API))
+            {
+                Plugin.INSTALLED_SOUND_API = true;
+                Logger.LogInfo("CROSS-COMPATIBILITY - loaforcsSoundAPI detected");
+            }
 
             configFixMasks = Config.Bind(
                 "Misc",

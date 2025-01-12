@@ -8,7 +8,7 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.Update))]
         [HarmonyPostfix]
-        static void FlowerSnakeEnemyPostUpdate(FlowerSnakeEnemy __instance)
+        static void FlowerSnakeEnemyPostUpdate(FlowerSnakeEnemy __instance, bool ___flapping)
         {
             if (__instance.flappingAudio.isPlaying)
             {
@@ -18,19 +18,25 @@ namespace EnemySoundFixes.Patches
                     __instance.flappingAudio.mute = true;
                     Plugin.Logger.LogDebug("Tulip snake: Stop making noise while dead");
                 }
-                /*else if (__instance.flappingAudio.clip == __instance.enemyType.audioClips[9])
+                else if (!Plugin.INSTALLED_SOUND_API)
                 {
-                    if (__instance.clingingToPlayer != null)
+                    if (__instance.flappingAudio.clip == __instance.enemyType.audioClips[9])
+                    {
+                        if (__instance.clingingToPlayer != null)
+                        {
+                            __instance.flappingAudio.Stop();
+                            Plugin.Logger.LogDebug("Tulip snake: Stop scurrying (latched to player)");
+                        }
+                    }
+                    else if (__instance.clingingToPlayer == null)
                     {
                         __instance.flappingAudio.Stop();
-                        Plugin.Logger.LogDebug("Tulip snake: Stop scurrying (latched to player)");
+                        Plugin.Logger.LogDebug("Tulip snake: Stop flapping (no longer clinging)");
                     }
                 }
-                else if (__instance.clingingToPlayer == null)
-                {
-                    __instance.flappingAudio.Stop();
-                    Plugin.Logger.LogDebug("Tulip snake: Stop flapping (no longer clinging)");
-                }*/
+
+                if (___flapping)
+                    __instance.flappingAudio.volume = 1f; //Mathf.Lerp(__instance.flappingAudio.volume, 1f, Time.deltaTime * 3f);
             }
         }
 

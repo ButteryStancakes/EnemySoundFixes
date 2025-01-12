@@ -164,10 +164,16 @@ namespace EnemySoundFixes.Patches
 
             AudioClip doorAudio = __instance.doorAudios[Random.Range(0, __instance.doorAudios.Length)];
 
-            __instance.entrancePointAudio.PlayOneShot(doorAudio);
-            WalkieTalkie.TransmitOneShotAudio(__instance.entrancePointAudio, doorAudio);
-            ___exitPointAudio.PlayOneShot(doorAudio);
-            WalkieTalkie.TransmitOneShotAudio(___exitPointAudio, doorAudio);
+            if (__instance.entrancePointAudio != null)
+            {
+                __instance.entrancePointAudio.PlayOneShot(doorAudio);
+                WalkieTalkie.TransmitOneShotAudio(__instance.entrancePointAudio, doorAudio);
+            }
+            if (___exitPointAudio != null)
+            {
+                ___exitPointAudio.PlayOneShot(doorAudio);
+                WalkieTalkie.TransmitOneShotAudio(___exitPointAudio, doorAudio);
+            }
 
             return false;
         }
