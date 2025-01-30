@@ -115,7 +115,7 @@ namespace EnemySoundFixes.Patches
         static void PostTeleportMaskedEnemy()
         {
             if (mainEntranceScript == null)
-                mainEntranceScript = Object.FindObjectsOfType<EntranceTeleport>()?.FirstOrDefault(entranceTeleport => entranceTeleport.entranceId == 0);
+                mainEntranceScript = Object.FindObjectsByType<EntranceTeleport>(FindObjectsSortMode.None)?.FirstOrDefault(entranceTeleport => entranceTeleport.entranceId == 0);
 
             if (mainEntranceScript != null)
             {

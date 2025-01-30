@@ -20,8 +20,9 @@ namespace EnemySoundFixes.Patches
             {
                 PlayAudioAnimationEvent playAudioAnimationEvent = __instance.animationContainer.GetComponent<PlayAudioAnimationEvent>();
                 AudioSource closeWideSFX = playAudioAnimationEvent.audioToPlay;
-                if (closeWideSFX.isPlaying)
+                if (closeWideSFX.isPlaying && closeWideSFX.clip != null)
                 {
+                    closeWideSFX.clip = null;
                     closeWideSFX.Stop();
                     Plugin.Logger.LogDebug("Forest keeper: Stop chewing (eating animation interrupted)");
                 }

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace EnemySoundFixes.Patches
 {
@@ -205,7 +204,7 @@ namespace EnemySoundFixes.Patches
                         }
                     }
 
-                    foreach (AnimatedObjectTrigger animatedObjectTrigger in Object.FindObjectsOfType<AnimatedObjectTrigger>())
+                    foreach (AnimatedObjectTrigger animatedObjectTrigger in Object.FindObjectsByType<AnimatedObjectTrigger>(FindObjectsSortMode.None))
                     {
                         if (animatedObjectTrigger.thisAudioSource != null)
                         {
