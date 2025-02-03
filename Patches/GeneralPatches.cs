@@ -234,9 +234,15 @@ namespace EnemySoundFixes.Patches
         [HarmonyPostfix]
         static void RoundManagerPostAwake(RoundManager __instance)
         {
+            PatchManorDoors(__instance);
+            PatchMineshaftDoors(__instance);
+        }
+
+        static void PatchManorDoors(RoundManager roundManager)
+        {
             if (References.woodenDoorOpen == null || References.woodenDoorOpen.Length < 1 || References.woodenDoorClose == null || References.woodenDoorClose.Length < 1)
             {
-                IndoorMapType manor = __instance.dungeonFlowTypes.FirstOrDefault(dungeonFlowType => dungeonFlowType.dungeonFlow?.name == "Level2Flow");
+                IndoorMapType manor = roundManager.dungeonFlowTypes.FirstOrDefault(dungeonFlowType => dungeonFlowType.dungeonFlow?.name == "Level2Flow");
                 if (manor != null)
                 {
                     foreach (GraphNode node in manor.dungeonFlow.Nodes)
@@ -257,6 +263,46 @@ namespace EnemySoundFixes.Patches
                                         References.woodenDoorOpen = manorDoor.boolTrueAudios;
                                         Plugin.Logger.LogDebug("Cached wooden door sounds");
                                         return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        static void PatchMineshaftDoors(RoundManager roundManager)
+        {
+            // oh boy... here comes part 2
+            IndoorMapType mineshaft = roundManager.dungeonFlowTypes.FirstOrDefault(dungeonFlowType => dungeonFlowType.dungeonFlow?.name == "Level3Flow");
+            if (mineshaft != null)
+            {
+                foreach (GraphLine line in mineshaft.dungeonFlow.Lines)
+                {
+                    foreach (DungeonArchetype archetypes in line.DungeonArchetypes)
+                    {
+                        foreach (TileSet tileSet in archetypes.TileSets)
+                        {
+                            if (tileSet.name == "Level3TunnelTiles")
+                            {
+                                GameObject tunnelSplit = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "TunnelSplit")?.Value;
+                                if (tunnelSplit != null)
+                                {
+                                    // fun! 2!
+                                    Transform yellowMineDoor = tunnelSplit.transform.Find("DoorwayPointW")?.GetComponentInChildren<Doorway>()?.ConnectorPrefabWeights?.FirstOrDefault(prefab => prefab.GameObject.name == "MineDoorSpawn")?.GameObject.GetComponentInChildren<SpawnSyncedObject>()?.spawnPrefab?.transform;
+
+                                    if (yellowMineDoor != null)
+                                    {
+                                        foreach (Collider collider in yellowMineDoor.GetComponentsInChildren<Collider>())
+                                        {
+                                            if (collider.gameObject.layer == 8 && collider.name == "LOSBlocker" && collider.transform.parent.name == "MineDoorMesh")
+                                            {
+                                                collider.gameObject.layer = 11;
+                                                Plugin.Logger.LogDebug("Fixed mineshaft door occlusion");
+                                                return;
+                                            }
+                                        }
                                     }
                                 }
                             }
