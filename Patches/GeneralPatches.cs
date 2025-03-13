@@ -311,5 +311,13 @@ namespace EnemySoundFixes.Patches
                 }
             }
         }
+
+        [HarmonyPatch(typeof(EnemyVent), nameof(EnemyVent.OpenVentClientRpc))]
+        [HarmonyPostfix]
+        static void PostOpenVentClientRpc(EnemyVent __instance)
+        {
+            __instance.isPlayingAudio = false;
+            __instance.ventAudio.Stop();
+        }
     }
 }

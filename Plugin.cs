@@ -15,20 +15,28 @@ namespace EnemySoundFixes
 
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInDependency(GUID_SOUND_API, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(GUID_LOBBY_COMPATIBILITY, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.6.4";
+        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.6.6";
         internal static new ManualLogSource Logger;
 
         internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
 
+        const string GUID_LOBBY_COMPATIBILITY = "BMX.LobbyCompatibility";
         const string GUID_SOUND_API = "me.loaforc.soundapi";
         internal static bool INSTALLED_SOUND_API;
 
         void Awake()
         {
             Logger = base.Logger;
+
+            if (Chainloader.PluginInfos.ContainsKey(GUID_LOBBY_COMPATIBILITY))
+            {
+                Logger.LogInfo("CROSS-COMPATIBILITY - Lobby Compatibility detected");
+                LobbyCompatibility.Init();
+            }
 
             if (Chainloader.PluginInfos.ContainsKey(GUID_SOUND_API))
             {
@@ -45,7 +53,7 @@ namespace EnemySoundFixes
             configBetterMimicSteps = Config.Bind(
                 "Misc",
                 "BetterMimicSteps",
-                false,
+                true,
                 "Mimic footstep volume and distance are altered to sound more accurate to actual players.");
 
             configThumperNoThunder = Config.Bind(
