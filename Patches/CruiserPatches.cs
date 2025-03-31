@@ -96,7 +96,7 @@ namespace EnemySoundFixes.Patches
         [HarmonyPostfix]
         static void VehicleControllerPostLateUpdate(VehicleController __instance)
         {
-            if (__instance.magnetedToShip && Plugin.configSpaceMutesCruiser.Value > CruiserMute.Nothing && (StartOfRound.Instance.inShipPhase || !StartOfRound.Instance.shipDoorsEnabled))
+            if (__instance.magnetedToShip && (StartOfRound.Instance.inShipPhase || !StartOfRound.Instance.shipDoorsEnabled) && Plugin.configSpaceMutesCruiser.Value > CruiserMute.Nothing)
             {
                 __instance.hornAudio.mute = true;
                 __instance.engineAudio1.mute = true;
@@ -116,6 +116,7 @@ namespace EnemySoundFixes.Patches
                     __instance.radioAudio.mute = true;
                     __instance.radioInterference.mute = true;
                 }
+                __instance.pushAudio.mute = true;
             }
             else
             {
@@ -129,6 +130,7 @@ namespace EnemySoundFixes.Patches
                 //__instance.extremeStressAudio.mute = false;
                 __instance.radioAudio.mute = false;
                 __instance.radioInterference.mute = false;
+                __instance.pushAudio.mute = false;
             }
         }
     }
