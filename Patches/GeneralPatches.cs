@@ -2,6 +2,7 @@
 using DunGen.Graph;
 using HarmonyLib;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -20,6 +21,18 @@ namespace EnemySoundFixes.Patches
         [HarmonyPostfix]
         static void QuickMenuManagerPostStart(QuickMenuManager __instance)
         {
+            AudioClip stunFlowerman = null;
+            try
+            {
+                AssetBundle sfxBundle = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "enemysoundfixes"));
+                stunFlowerman = sfxBundle.LoadAsset<AudioClip>("StunFlowerman");
+                sfxBundle.Unload(false);
+            }
+            catch
+            {
+                Plugin.Logger.LogError("Encountered some error loading assets from bundle \"enemysoundfixes\". Did you install the plugin correctly?");
+            }
+
             List<SpawnableEnemyWithRarity> allEnemies =
             [
                 .. __instance.testAllEnemiesLevel.Enemies,
@@ -63,6 +76,13 @@ namespace EnemySoundFixes.Patches
                                 searching.playOneShotVoice = false;
                                 Plugin.Logger.LogDebug("Remove thunder sound from thumper");
                             }
+                        }
+                        break;
+                    case "Flowerman":
+                        if (stunFlowerman != null)
+                        {
+                            enemy.enemyType.stunSFX = stunFlowerman;
+                            Plugin.Logger.LogDebug("Fix bracken stun sound");
                         }
                         break;
                     case "ForestGiant":
