@@ -12,35 +12,6 @@ namespace EnemySoundFixes.Patches
     {
         static EntranceTeleport mainEntranceScript;
 
-        [HarmonyPatch(typeof(RandomPeriodicAudioPlayer), "Update")]
-        [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> RandomPeriodicAudioPlayerTransUpdate(IEnumerable<CodeInstruction> instructions)
-        {
-            if (!Plugin.configFixMasks.Value)
-                return instructions;
-
-            List<CodeInstruction> codes = instructions.ToList();
-
-            for (int i = 1; i < codes.Count; i++)
-            {
-                if (codes[i].opcode == OpCodes.Add)
-                {
-                    for (int j = i - 1; j >= 0; j--)
-                    {
-                        if (codes[j].opcode == OpCodes.Call && (MethodInfo)codes[j].operand == References.REALTIME_SINCE_STARTUP)
-                        {
-                            codes[i].opcode = OpCodes.Nop;
-                            codes[j].opcode = OpCodes.Nop;
-                            Plugin.Logger.LogDebug("Transpiler (Periodic mask audio): Fix intervals");
-                            return codes;
-                        }
-                    }
-                }
-            }
-
-            return codes;
-        }
-
         [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.Start))]
         [HarmonyPostfix]
         static void MaskedPlayerEnemyPostStart(MaskedPlayerEnemy __instance)

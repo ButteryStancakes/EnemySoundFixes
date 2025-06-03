@@ -18,7 +18,7 @@ namespace EnemySoundFixes
     [BepInDependency(GUID_LOBBY_COMPATIBILITY, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.7.0";
+        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.8.0";
         internal static new ManualLogSource Logger;
 
         internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds;
@@ -43,12 +43,6 @@ namespace EnemySoundFixes
                 INSTALLED_SOUND_API = true;
                 Logger.LogInfo("CROSS-COMPATIBILITY - loaforcsSoundAPI detected");
             }
-
-            configFixMasks = Config.Bind(
-                "Misc",
-                "FixMasks",
-                true,
-                "(Host only, requires game restart) Fixes masks' broken audio intervals.\nDisabling this is useful if you use a voice mimicking mod. (Skinwalkers, Mirage, etc.)");
 
             configBetterMimicSteps = Config.Bind(
                 "Misc",
@@ -75,14 +69,11 @@ namespace EnemySoundFixes
                 "Fixes backwards open/close sounds on factory doors, breaker boxes, and storage locker doors. Fixes Rend and Adamance cabin doors using steel door sounds.");
 
             // migrate from previous version if necessary
-            if (configFixMasks.Value)
-            {
-                bool dontFixMasks = Config.Bind("Misc", "DontFixMasks", false, "Legacy setting, use \"FixMasks\" instead").Value;
-                if (dontFixMasks)
-                    configFixMasks.Value = false;
-                Config.Remove(Config["Misc", "DontFixMasks"].Definition);
-                Config.Save();
-            }
+            Config.Bind("Misc", "DontFixMasks", false, "Legacy setting, doesn't work");
+            Config.Remove(Config["Misc", "DontFixMasks"].Definition);
+            Config.Bind("Misc", "FixMasks", true, "Legacy setting, doesn't work");
+            Config.Remove(Config["Misc", "FixMasks"].Definition);
+            Config.Save();
 
             new Harmony(PLUGIN_GUID).PatchAll();
 

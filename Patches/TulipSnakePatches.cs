@@ -36,7 +36,7 @@ namespace EnemySoundFixes.Patches
                 }
 
                 if (___flapping)
-                    __instance.flappingAudio.volume = 1f; //Mathf.Lerp(__instance.flappingAudio.volume, 1f, Time.deltaTime * 3f);
+                    __instance.flappingAudio.volume = 0.85f; // v70
             }
         }
 

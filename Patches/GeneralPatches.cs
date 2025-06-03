@@ -94,6 +94,14 @@ namespace EnemySoundFixes.Patches
                         forestGiantAI.giantBurningAudio.volume = 0f;
                         Plugin.Logger.LogDebug("Fix forest giant burning volume fade");
                         break;
+                    case "GiantKiwi":
+                        AudioSource giantKiwiFeatherPoofContainer = enemy.enemyType.enemyPrefab.GetComponent<GiantKiwiAI>()?.feathersPrefab?.GetComponent<AudioSource>();
+                        if (giantKiwiFeatherPoofContainer != null)
+                        {
+                            giantKiwiFeatherPoofContainer.spatialBlend = 1f;
+                            Plugin.Logger.LogDebug("Fix sapsucker death poof");
+                        }
+                        break;
                     case "MouthDog":
                         mouthDog = enemy.enemyType;
                         break;
