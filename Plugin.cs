@@ -21,7 +21,7 @@ namespace EnemySoundFixes
         internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.8.0";
         internal static new ManualLogSource Logger;
 
-        internal static ConfigEntry<bool> configFixMasks, configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds;
+        internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
 
         const string GUID_LOBBY_COMPATIBILITY = "BMX.LobbyCompatibility";
