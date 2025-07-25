@@ -18,10 +18,10 @@ namespace EnemySoundFixes
     [BepInDependency(GUID_LOBBY_COMPATIBILITY, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.8.0";
+        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.8.1";
         internal static new ManualLogSource Logger;
 
-        internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds;
+        internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds, configShootTheDog;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
 
         const string GUID_LOBBY_COMPATIBILITY = "BMX.LobbyCompatibility";
@@ -55,6 +55,12 @@ namespace EnemySoundFixes
                 "ThumperNoThunder",
                 true,
                 "Thumpers no longer play thunder sound effects from their voice when they stop chasing after players.");
+
+            configShootTheDog = Config.Bind(
+                "Misc",
+                "ShootTheDog",
+                true,
+                "Makes eyeless dogs play their stun sound effect on death, rather than falling silently.");
 
             configSpaceMutesCruiser = Config.Bind(
                 "Misc",

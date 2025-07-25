@@ -31,8 +31,16 @@ namespace EnemySoundFixes.Patches
 
             if (!destroy)
             {
-                __instance.creatureVoice.mute = true;
-                Plugin.Logger.LogDebug("Eyeless dog: Don't start breathing after death");
+                if (Plugin.configShootTheDog.Value && __instance.enemyType.stunSFX != null)
+                {
+                    __instance.creatureVoice.PlayOneShot(__instance.enemyType.stunSFX);
+                    Plugin.Logger.LogDebug("Eyeless dog: React grievously to agonizing departure");
+                }
+                else
+                {
+                    __instance.creatureVoice.mute = true;
+                    Plugin.Logger.LogDebug("Eyeless dog: Don't start breathing after death");
+                }
             }
         }
 
