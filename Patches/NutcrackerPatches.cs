@@ -7,7 +7,7 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(NutcrackerEnemyAI), nameof(NutcrackerEnemyAI.KillEnemy))]
         [HarmonyPostfix]
-        static void NutcrackerEnemyAIPostKillEnemy(NutcrackerEnemyAI __instance, bool destroy)
+        static void NutcrackerEnemyAI_Post_KillEnemy(NutcrackerEnemyAI __instance, bool destroy)
         {
             if (destroy)
                 return;

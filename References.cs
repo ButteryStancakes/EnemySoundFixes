@@ -2,6 +2,7 @@
 using HarmonyLib;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace EnemySoundFixes
 {
@@ -20,5 +21,7 @@ namespace EnemySoundFixes
 
         internal static AudioClip baboonTakeDamage, hitEnemyBody;
         internal static AudioClip[] woodenDoorOpen, woodenDoorClose;
+        internal static AudioClip cruiserDashboardButton;
+        internal static AudioMixerGroup sfx;
     }
 }

@@ -14,7 +14,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.Start))]
         [HarmonyPostfix]
-        static void MaskedPlayerEnemyPostStart(MaskedPlayerEnemy __instance)
+        static void MaskedPlayerEnemy_Post_Start(MaskedPlayerEnemy __instance)
         {
             if (!Plugin.configBetterMimicSteps.Value)
                 return;
@@ -35,14 +35,14 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.HitEnemy))]
         [HarmonyPrefix]
-        static void MaskedPlayerEnemyPreHitEnemy(MaskedPlayerEnemy __instance, int force, bool playHitSFX)
+        static void MaskedPlayerEnemy_Pre_HitEnemy(MaskedPlayerEnemy __instance, int force, bool playHitSFX)
         {
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= force;
         }
 
         [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.KillEnemy))]
         [HarmonyPostfix]
-        static void MaskedPlayerEnemyPostKillEnemy(MaskedPlayerEnemy __instance, bool destroy)
+        static void MaskedPlayerEnemy_Post_KillEnemy(MaskedPlayerEnemy __instance, bool destroy)
         {
             // happens after creatureSFX.Stop() in CancelSpecialAnimationWithPlayer -> FinishKillAnimation
             if (GeneralPatches.playHitSound)
@@ -56,10 +56,10 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(MaskedPlayerEnemy), "TeleportMaskedEnemy")]
+        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.TeleportMaskedEnemy))]
         [HarmonyTranspiler]
         [HarmonyPriority(Priority.First)]
-        static IEnumerable<CodeInstruction> TransTeleportMaskedEnemy(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> MaskedPlayerEnemy_Trans_TeleportMaskedEnemy(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
@@ -81,9 +81,9 @@ namespace EnemySoundFixes.Patches
             return instructions;
         }
 
-        [HarmonyPatch(typeof(MaskedPlayerEnemy), "TeleportMaskedEnemy")]
+        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.TeleportMaskedEnemy))]
         [HarmonyPostfix]
-        static void PostTeleportMaskedEnemy()
+        static void MaskedPlayerEnemy_Post_TeleportMaskedEnemy()
         {
             if (mainEntranceScript == null)
                 mainEntranceScript = Object.FindObjectsByType<EntranceTeleport>(FindObjectsSortMode.None)?.FirstOrDefault(entranceTeleport => entranceTeleport.entranceId == 0);

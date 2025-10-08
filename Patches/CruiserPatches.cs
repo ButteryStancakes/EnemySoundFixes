@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -10,11 +11,13 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class CruiserPatches
     {
+        static Coroutine twistingKey;
+
         [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.RevCarClientRpc))]
-        [HarmonyPatch(typeof(VehicleController), "TryIgnition", MethodType.Enumerator)]
+        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.TryIgnition), MethodType.Enumerator)]
         [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.SetIgnition))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> VehicleControllerTransEngineRev(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> VehicleController_Trans_EngineRev(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
@@ -36,17 +39,17 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(VehicleController), "SetVehicleAudioProperties")]
+        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.SetVehicleAudioProperties))]
         [HarmonyPrefix]
-        static void VehicleControllerPreSetVehicleAudioProperties(VehicleController __instance, AudioSource audio, ref bool audioActive)
+        static void VehicleController_Pre_SetVehicleAudioProperties(VehicleController __instance, AudioSource audio, ref bool audioActive)
         {
             if (audioActive && ((audio == __instance.extremeStressAudio && __instance.magnetedToShip) || ((audio == __instance.rollingAudio || audio == __instance.skiddingAudio) && (__instance.magnetedToShip || (!__instance.FrontLeftWheel.isGrounded && !__instance.FrontRightWheel.isGrounded && !__instance.BackLeftWheel.isGrounded && !__instance.BackRightWheel.isGrounded)))))
                 audioActive = false;
         }
 
-        [HarmonyPatch(typeof(VehicleController), "SetVehicleAudioProperties")]
+        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.SetVehicleAudioProperties))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> VehicleControllerTransSetVehicleAudioProperties(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> VehicleController_Trans_SetVehicleAudioProperties(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
@@ -65,9 +68,9 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(VehicleController), "LateUpdate")]
+        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.LateUpdate))]
         [HarmonyPostfix]
-        static void VehicleControllerPostLateUpdate(VehicleController __instance)
+        static void VehicleController_Post_LateUpdate(VehicleController __instance)
         {
             if (__instance.magnetedToShip && (StartOfRound.Instance.inShipPhase || !StartOfRound.Instance.shipDoorsEnabled) && Plugin.configSpaceMutesCruiser.Value > CruiserMute.Nothing)
             {
@@ -104,6 +107,67 @@ namespace EnemySoundFixes.Patches
                 __instance.radioAudio.mute = false;
                 __instance.radioInterference.mute = false;
                 __instance.pushAudio.mute = false;
+            }
+
+            if (twistingKey != null && __instance.keyIgnitionCoroutine == null)
+            {
+                __instance.StopCoroutine(twistingKey);
+                twistingKey = null;
+            }
+        }
+
+        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.TryIgnition))]
+        [HarmonyPrefix]
+        static void VehicleController_Pre_TryIgnition(VehicleController __instance, bool isLocalDriver)
+        {
+            if (!__instance.keyIsInIgnition && isLocalDriver && __instance.vehicleID == 0)
+                twistingKey = __instance.StartCoroutine(TwistKey(__instance));
+        }
+
+        static IEnumerator TwistKey(VehicleController vehicleController)
+        {
+            yield return new WaitForSeconds(0.85f);
+            if (vehicleController.keyIgnitionCoroutine != null && vehicleController.currentDriver != null)
+                vehicleController.currentDriver.movementAudio.PlayOneShot(vehicleController.twistKey);
+            twistingKey = null;
+            yield break;
+        }
+
+        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.Awake))]
+        [HarmonyPrefix]
+        static void VehicleController_Post_Awake(VehicleController __instance)
+        {
+            if (__instance.vehicleID != 0 || References.cruiserDashboardButton == null || References.sfx == null)
+                return;
+
+            Transform triggers = __instance.transform.Find("Triggers");
+            if (triggers != null)
+            {
+                //Transform radar = triggers.Find("Radio");
+                foreach (Transform button in new Transform[]{
+                    triggers.Find("ChangeChannel (1)"),
+                    triggers.Find("ChangeChannel (2)"),
+                    triggers.Find("ChangeChannel (3)"),
+                    /*radar?.Find("TurnOnRadio"),
+                    radar?.Find("ChangeChannel")*/})
+                {
+                    if (button == null || !button.TryGetComponent(out InteractTrigger interactTrigger) || button.GetComponent<AudioSource>() != null)
+                        continue;
+
+                    AudioSource audioSource = interactTrigger.gameObject.AddComponent<AudioSource>();
+                    audioSource.clip = References.cruiserDashboardButton;
+                    audioSource.outputAudioMixerGroup = References.sfx;
+                    audioSource.spatialBlend = 1f;
+                    audioSource.spread = 33f;
+                    audioSource.rolloffMode = AudioRolloffMode.Linear;
+                    audioSource.minDistance = 4f;
+                    audioSource.maxDistance = 15f;
+                    interactTrigger.onInteract.AddListener(delegate
+                    {
+                        audioSource.Play();
+                    });
+                    Plugin.Logger.LogDebug($"Cruiser: Dashboard button (\"{button.name}\")");
+                }
             }
         }
     }

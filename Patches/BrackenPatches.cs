@@ -7,14 +7,14 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(FlowermanAI), nameof(FlowermanAI.HitEnemy))]
         [HarmonyPrefix]
-        static void FlowermanAIPreHitEnemy(FlowermanAI __instance, int force, bool playHitSFX)
+        static void FlowermanAI_Pre_HitEnemy(FlowermanAI __instance, int force, bool playHitSFX)
         {
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= force;
         }
 
         [HarmonyPatch(typeof(FlowermanAI), nameof(FlowermanAI.KillEnemy))]
         [HarmonyPostfix]
-        static void FlowermanAIPostKillEnemy(FlowermanAI __instance, bool destroy)
+        static void FlowermanAI_Post_KillEnemy(FlowermanAI __instance, bool destroy)
         {
             // happens after creatureSFX.Stop()
             if (GeneralPatches.playHitSound)

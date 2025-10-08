@@ -12,7 +12,7 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayer))]
         [HarmonyPrefix]
-        static void PlayerControllerBPreDamagePlayer(CauseOfDeath causeOfDeath, ref bool fallDamage)
+        static void PlayerControllerB_Pre_DamagePlayer(CauseOfDeath causeOfDeath, ref bool fallDamage)
         {
             if (causeOfDeath == CauseOfDeath.Gravity && !fallDamage)
             {
@@ -23,7 +23,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayerFromOtherClientClientRpc))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> PlayerControllerBTransDamagePlayerFromOtherClientClientRpc(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> PlayerControllerB_Trans_DamagePlayerFromOtherClientClientRpc(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
 

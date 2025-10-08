@@ -16,7 +16,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillEnemy))]
         [HarmonyPostfix]
-        static void MouthDogAIPostKillEnemy(MouthDogAI __instance, bool destroy)
+        static void MouthDogAI_Post_KillEnemy(MouthDogAI __instance, bool destroy)
         {
             // happens after creatureSFX.Stop()
             if (GeneralPatches.playHitSound)
@@ -46,7 +46,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.Start))]
         [HarmonyPostfix]
-        static void MouthDogAIPostStart(MouthDogAI __instance)
+        static void MouthDogAI_Post_Start(MouthDogAI __instance)
         {
             System.Random random = new(StartOfRound.Instance.randomMapSeed + (int)__instance.NetworkObjectId);
             if (random.Next(10) < 2)
@@ -58,7 +58,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillPlayerClientRpc))]
         [HarmonyPrefix]
-        static void MouthDogAIPreKillPlayerClientRpc(MouthDogAI __instance)
+        static void MouthDogAI_Pre_KillPlayerClientRpc(MouthDogAI __instance)
         {
             if (!dogPitches.ContainsKey(__instance))
             {
@@ -71,7 +71,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.Update))]
         [HarmonyPostfix]
-        static void MouthDogAIPostUpdate(MouthDogAI __instance, bool ___inKillAnimation)
+        static void MouthDogAI_Post_Update(MouthDogAI __instance, bool ___inKillAnimation)
         {
             if (!__instance.isEnemyDead)
             {
@@ -86,9 +86,9 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(MouthDogAI), "enterChaseMode", MethodType.Enumerator)]
+        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.enterChaseMode), MethodType.Enumerator)]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> MouthDogAITransEnterChaseMode(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> MouthDogAI_Trans_EnterChaseMode(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
@@ -106,9 +106,9 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(EnemyAI), "SubtractFromPowerLevel")]
+        [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.SubtractFromPowerLevel))]
         [HarmonyPostfix]
-        static void EnemyAIPostSubtractFromPowerLevel(EnemyAI __instance)
+        static void EnemyAI_Post_SubtractFromPowerLevel(EnemyAI __instance)
         {
             MouthDogAI mouthDogAI = __instance as MouthDogAI;
             if (mouthDogAI != null && dogPitches.Remove(mouthDogAI))
@@ -117,14 +117,14 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.ResetEnemyVariables))]
         [HarmonyPostfix]
-        static void RoundManagerPostResetEnemyVariables()
+        static void RoundManager_Post_ResetEnemyVariables()
         {
             dogPitches.Clear();
         }
 
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.HitEnemy))]
         [HarmonyPrefix]
-        static void MouthDogAIPreHitEnemy(MouthDogAI __instance, int force, bool playHitSFX)
+        static void MouthDogAI_Pre_HitEnemy(MouthDogAI __instance, int force, bool playHitSFX)
         {
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= force;
         }

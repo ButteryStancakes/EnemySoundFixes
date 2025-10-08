@@ -9,9 +9,9 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class SnareFleaPatches
     {
-        [HarmonyPatch(typeof(CentipedeAI), "delayedShriek", MethodType.Enumerator)]
+        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.delayedShriek), MethodType.Enumerator)]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> TransDelayedShriek(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        static IEnumerable<CodeInstruction> CentipedeAI_Trans_delayedShriek(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             List<CodeInstruction> codes = instructions.ToList();
             Label label = generator.DefineLabel();
@@ -39,7 +39,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.Update))]
         [HarmonyPrefix]
-        static void CentipedeAIPreUpdate(CentipedeAI __instance)
+        static void CentipedeAI_Pre_Update(CentipedeAI __instance)
         {
             if (__instance.creatureSFX.isPlaying && __instance.creatureSFX.clip == __instance.enemyBehaviourStates[2].SFXClip && (__instance.isEnemyDead || __instance.currentBehaviourStateIndex != 2))
             {
@@ -51,7 +51,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.KillEnemy))]
         [HarmonyPostfix]
-        static void CentipedeAIPostKillEnemy(CentipedeAI __instance)
+        static void CentipedeAI_Post_KillEnemy(CentipedeAI __instance)
         {
             __instance.creatureSFX.clip = null; // don't cancel hit sound in Update()
 
@@ -62,7 +62,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.PlayAudioOfCurrentState))]
         [HarmonyPostfix]
-        static void PostPlayAudioOfCurrentState(EnemyAI __instance)
+        static void EnemyAI_Post_PlayAudioOfCurrentState(EnemyAI __instance)
         {
             if (__instance is CentipedeAI && __instance.currentBehaviourStateIndex == 1 && __instance.creatureVoice.pitch > 1f)
             {
@@ -73,7 +73,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.HitEnemy))]
         [HarmonyPrefix]
-        static void CentipedeAIPreHitEnemy(CentipedeAI __instance)
+        static void CentipedeAI_Pre_HitEnemy(CentipedeAI __instance)
         {
             // stop chasing sound early so hit sound doesn't get blocked by other code
             if (__instance.creatureSFX.isPlaying && __instance.creatureSFX.clip == __instance.enemyBehaviourStates[2].SFXClip)
@@ -83,9 +83,9 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(CentipedeAI), "fallFromCeiling", MethodType.Enumerator)]
+        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.fallFromCeiling), MethodType.Enumerator)]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> TransFallFromCeiling(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        static IEnumerable<CodeInstruction> CentipedeAI_Trans_fallFromCeiling(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             List<CodeInstruction> codes = instructions.ToList();
             Label label = generator.DefineLabel();

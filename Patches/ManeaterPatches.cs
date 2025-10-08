@@ -8,14 +8,14 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(CaveDwellerAI), nameof(CaveDwellerAI.HitEnemy))]
         [HarmonyPrefix]
-        static void CaveDwellerAIPreHitEnemy(CaveDwellerAI __instance, int force, bool playHitSFX)
+        static void CaveDwellerAI_Pre_HitEnemy(CaveDwellerAI __instance, int force, bool playHitSFX)
         {
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= 1;
         }
 
         [HarmonyPatch(typeof(CaveDwellerAI), nameof(CaveDwellerAI.KillEnemy))]
         [HarmonyPostfix]
-        static void CaveDwellerAIPostKillEnemy(CaveDwellerAI __instance, bool destroy)
+        static void CaveDwellerAI_Post_KillEnemy(CaveDwellerAI __instance, bool destroy)
         {
             if (destroy)
                 return;

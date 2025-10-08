@@ -7,7 +7,7 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(HoarderBugAI), nameof(HoarderBugAI.KillEnemy))]
         [HarmonyPostfix]
-        static void HoarderBugAIPostKillEnemy(HoarderBugAI __instance, bool destroy)
+        static void HoarderBugAI_Post_KillEnemy(HoarderBugAI __instance, bool destroy)
         {
             // happens after creatureSFX.Stop()
             if (GeneralPatches.playHitSound)
@@ -30,7 +30,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(HoarderBugAI), nameof(HoarderBugAI.HitEnemy))]
         [HarmonyPrefix]
-        static void HoarderBugAIPreHitEnemy(HoarderBugAI __instance, int force, bool playHitSFX)
+        static void HoarderBugAI_Pre_HitEnemy(HoarderBugAI __instance, int force, bool playHitSFX)
         {
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= force;
         }

@@ -9,9 +9,9 @@ namespace EnemySoundFixes.Patches
     [HarmonyPatch]
     class KidnapperFoxPatches
     {
-        [HarmonyPatch(typeof(BushWolfEnemy), "HitTongueLocalClient")]
+        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.HitTongueLocalClient))]
         [HarmonyPostfix]
-        static void BushWolfEnemyPostHitTongueLocalClient(BushWolfEnemy __instance)
+        static void BushWolfEnemy_Post_HitTongueLocalClient(BushWolfEnemy __instance)
         {
             // need to call this again because it gets stopped by CancelReelingPlayerIn
             __instance.creatureVoice.PlayOneShot(__instance.hitBushWolfSFX);
@@ -20,7 +20,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.Update))]
         [HarmonyPostfix]
-        static void BushWolfEnemyPostUpdate(BushWolfEnemy __instance, bool ___dragging)
+        static void BushWolfEnemy_Post_Update(BushWolfEnemy __instance, bool ___dragging)
         {
             if ((!___dragging || __instance.isEnemyDead || __instance.stunNormalizedTimer > 0f) && __instance.creatureVoice.isPlaying && __instance.creatureVoice.clip == __instance.snarlSFX)
             {
@@ -34,9 +34,9 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(BushWolfEnemy), "CancelReelingPlayerIn")]
+        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.CancelReelingPlayerIn))]
         [HarmonyPrefix]
-        static void BushWolfEnemyPreCancelReelingPlayerIn(BushWolfEnemy __instance, ref bool ___dragging)
+        static void BushWolfEnemy_Pre_CancelReelingPlayerIn(BushWolfEnemy __instance, ref bool ___dragging)
         {
             if (___dragging && __instance.isEnemyDead)
             {
@@ -47,7 +47,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.HitEnemy))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> BushWolfEnemyTransHitEnemy(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        static IEnumerable<CodeInstruction> BushWolfEnemy_Trans_HitEnemy(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             List<CodeInstruction> codes = instructions.ToList();
 

@@ -12,7 +12,7 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(BaboonBirdAI), nameof(BaboonBirdAI.HitEnemy))]
         [HarmonyPostfix]
-        static void BaboonBirdAIPostHitEnemy(BaboonBirdAI __instance, bool playHitSFX)
+        static void BaboonBirdAI_Post_HitEnemy(BaboonBirdAI __instance, bool playHitSFX)
         {
             if (playHitSFX && !__instance.isEnemyDead)
             {
@@ -28,7 +28,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(BaboonBirdAI), nameof(BaboonBirdAI.OnCollideWithEnemy))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> EnemyTransOnCollideWithEnemy(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+        static IEnumerable<CodeInstruction> BaboonBirdAI_Trans_OnCollideWithEnemy(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             List<CodeInstruction> codes = instructions.ToList();
 

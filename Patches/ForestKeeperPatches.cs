@@ -14,7 +14,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.Update))]
         [HarmonyPostfix]
-        static void ForestGiantAIPostUpdate(ForestGiantAI __instance)
+        static void ForestGiantAI_Post_Update(ForestGiantAI __instance)
         {
             if (__instance.stunNormalizedTimer > 0f || __instance.isEnemyDead || __instance.currentBehaviourStateIndex == 2)
             {
@@ -35,10 +35,10 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(ForestGiantAI), "StopKillAnimation")]
-        [HarmonyPatch(typeof(ForestGiantAI), "EatPlayerAnimation", MethodType.Enumerator)]
+        [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.StopKillAnimation))]
+        [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.EatPlayerAnimation), MethodType.Enumerator)]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> ForestGiantAITransAnimation(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> ForestGiantAI_Trans_Animation(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
@@ -61,7 +61,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.AnimationEventA))]
         [HarmonyPostfix]
-        static void ForestGiantAIPostAnimationEventA(ForestGiantAI __instance)
+        static void ForestGiantAI_Post_AnimationEventA(ForestGiantAI __instance)
         {
             __instance.creatureSFX.PlayOneShot(__instance.giantFall);
             Plugin.Logger.LogDebug("Forest keeper: Fallen down");
@@ -69,7 +69,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(PlayAudioAnimationEvent), nameof(PlayAudioAnimationEvent.PlayAudio2))]
         [HarmonyPrefix]
-        static bool PlayAudioAnimationEventPrePlayAudio2(PlayAudioAnimationEvent __instance)
+        static bool PlayAudioAnimationEvent_Pre_PlayAudio2(PlayAudioAnimationEvent __instance)
         {
             if (__instance.audioClip2.name == "FGiantEatPlayerSFX")
             {
@@ -90,7 +90,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(PlayAudioAnimationEvent), nameof(PlayAudioAnimationEvent.PlayParticle))]
         [HarmonyPrefix]
-        static bool PlayAudioAnimationEventPrePlayParticle(PlayAudioAnimationEvent __instance)
+        static bool PlayAudioAnimationEvent_Pre_PlayParticle(PlayAudioAnimationEvent __instance)
         {
             if (__instance.audioClip2 != null && __instance.audioClip2.name == "FGiantEatPlayerSFX")
             {
@@ -107,7 +107,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.CancelSpecialAnimationWithPlayer))]
         [HarmonyPrefix]
-        static void EnemyAIPreCancelSpecialAnimationWithPlayer(EnemyAI __instance)
+        static void EnemyAI_Pre_CancelSpecialAnimationWithPlayer(EnemyAI __instance)
         {
             if (__instance is ForestGiantAI)
             {

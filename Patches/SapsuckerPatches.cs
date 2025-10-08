@@ -7,7 +7,7 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(GiantKiwiAI), nameof(GiantKiwiAI.Update))]
         [HarmonyPostfix]
-        static void GiantKiwiAIPostUpdate(GiantKiwiAI __instance)
+        static void GiantKiwiAI_Post_Update(GiantKiwiAI __instance)
         {
             if (__instance.isEnemyDead && __instance.creatureSFX.isPlaying)
             {

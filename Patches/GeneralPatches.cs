@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace EnemySoundFixes.Patches
 {
@@ -17,9 +18,9 @@ namespace EnemySoundFixes.Patches
 
         static bool patchedDoorSfx;
 
-        [HarmonyPatch(typeof(QuickMenuManager), "Start")]
+        [HarmonyPatch(typeof(QuickMenuManager), nameof(QuickMenuManager.Start))]
         [HarmonyPostfix]
-        static void QuickMenuManagerPostStart(QuickMenuManager __instance)
+        static void QuickMenuManager_Post_Start(QuickMenuManager __instance)
         {
             AudioClip stunFlowerman = null;
             try
@@ -126,7 +127,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(AnimatedObjectTrigger), nameof(AnimatedObjectTrigger.Start))]
         [HarmonyPostfix]
-        static void AnimatedObjectTriggerPostStart(AnimatedObjectTrigger __instance)
+        static void AnimatedObjectTrigger_Post_Start(AnimatedObjectTrigger __instance)
         {
             if (__instance.playAudiosInSequence && __instance.playParticle == null)
             {
@@ -138,7 +139,7 @@ namespace EnemySoundFixes.Patches
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.OnCollideWithEnemy))]
         [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.OnCollideWithEnemy))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> EnemyTransOnCollideWithEnemy(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> EnemyAI_Trans_OnCollideWithEnemy(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
@@ -162,9 +163,9 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(StormyWeather), "PlayThunderEffects")]
+        [HarmonyPatch(typeof(StormyWeather), nameof(StormyWeather.PlayThunderEffects))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> TransPlayThunderEffects(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> StormyWeather_Trans_PlayThunderEffects(IEnumerable<CodeInstruction> instructions)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
@@ -184,7 +185,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(EntranceTeleport), nameof(EntranceTeleport.PlayAudioAtTeleportPositions))]
         [HarmonyPrefix]
-        static bool EntranceTeleportPlayAudioAtTeleportPositions(EntranceTeleport __instance, AudioSource ___exitPointAudio)
+        static bool EntranceTeleport_PlayAudioAtTeleportPositions(EntranceTeleport __instance, AudioSource ___exitPointAudio)
         {
             if (__instance.doorAudios == null || __instance.doorAudios.Length < 1)
                 return false;
@@ -207,7 +208,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.FinishGeneratingNewLevelClientRpc))]
         [HarmonyPostfix]
-        static void PostFinishGeneratingNewLevelClientRpc()
+        static void RoundManager_Post_FinishGeneratingNewLevelClientRpc()
         {
             if (!patchedDoorSfx)
             {
@@ -258,12 +259,12 @@ namespace EnemySoundFixes.Patches
             patchedDoorSfx = false;
         }
 
-        [HarmonyPatch(typeof(RoundManager), "Awake")]
+        [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.Awake))]
         [HarmonyPostfix]
-        static void RoundManagerPostAwake(RoundManager __instance)
+        static void RoundManager_Post_Awake(RoundManager __instance)
         {
             PatchManorDoors(__instance);
-            PatchMineshaftDoors(__instance);
+            MineshaftPatches(__instance);
         }
 
         static void PatchManorDoors(RoundManager roundManager)
@@ -300,38 +301,74 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        static void PatchMineshaftDoors(RoundManager roundManager)
+        static void MineshaftPatches(RoundManager roundManager)
         {
-            // oh boy... here comes part 2
             IndoorMapType mineshaft = roundManager.dungeonFlowTypes.FirstOrDefault(dungeonFlowType => dungeonFlowType.dungeonFlow?.name == "Level3Flow");
             if (mineshaft != null)
             {
-                foreach (GraphLine line in mineshaft.dungeonFlow.Lines)
-                {
-                    foreach (DungeonArchetype archetypes in line.DungeonArchetypes)
-                    {
-                        foreach (TileSet tileSet in archetypes.TileSets)
-                        {
-                            if (tileSet.name == "Level3TunnelTiles")
-                            {
-                                GameObject tunnelSplit = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "TunnelSplit")?.Value;
-                                if (tunnelSplit != null)
-                                {
-                                    // fun! 2!
-                                    Transform yellowMineDoor = tunnelSplit.transform.Find("DoorwayPointW")?.GetComponentInChildren<Doorway>()?.ConnectorPrefabWeights?.FirstOrDefault(prefab => prefab.GameObject.name == "MineDoorSpawn")?.GameObject.GetComponentInChildren<SpawnSyncedObject>()?.spawnPrefab?.transform;
+                PatchMineshaftDoors(mineshaft);
+                GetButtonAudio(mineshaft);
+            }
+        }
 
-                                    if (yellowMineDoor != null)
+        static void PatchMineshaftDoors(IndoorMapType mineshaft)
+        {
+            // oh boy... here comes part 2
+            foreach (GraphLine line in mineshaft.dungeonFlow.Lines)
+            {
+                foreach (DungeonArchetype archetypes in line.DungeonArchetypes)
+                {
+                    foreach (TileSet tileSet in archetypes.TileSets)
+                    {
+                        if (tileSet.name == "Level3TunnelTiles")
+                        {
+                            GameObject tunnelSplit = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "TunnelSplit")?.Value;
+                            if (tunnelSplit != null)
+                            {
+                                // fun! 2!
+                                Transform yellowMineDoor = tunnelSplit.transform.Find("DoorwayPointW")?.GetComponentInChildren<Doorway>()?.ConnectorPrefabWeights?.FirstOrDefault(prefab => prefab.GameObject.name == "MineDoorSpawn")?.GameObject.GetComponentInChildren<SpawnSyncedObject>()?.spawnPrefab?.transform;
+
+                                if (yellowMineDoor != null)
+                                {
+                                    foreach (Collider collider in yellowMineDoor.GetComponentsInChildren<Collider>())
                                     {
-                                        foreach (Collider collider in yellowMineDoor.GetComponentsInChildren<Collider>())
+                                        if (collider.gameObject.layer == 8 && collider.name == "LOSBlocker" && collider.transform.parent.name == "MineDoorMesh")
                                         {
-                                            if (collider.gameObject.layer == 8 && collider.name == "LOSBlocker" && collider.transform.parent.name == "MineDoorMesh")
-                                            {
-                                                collider.gameObject.layer = 11;
-                                                Plugin.Logger.LogDebug("Fixed mineshaft door occlusion");
-                                                return;
-                                            }
+                                            collider.gameObject.layer = 11;
+                                            Plugin.Logger.LogDebug("Fixed mineshaft door occlusion");
+                                            return;
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        static void GetButtonAudio(IndoorMapType mineshaft)
+        {
+            if (References.cruiserDashboardButton == null || References.sfx == null)
+            {
+                foreach (GraphNode node in mineshaft.dungeonFlow.Nodes)
+                {
+                    foreach (TileSet tileSet in node.TileSets)
+                    {
+                        if (tileSet.name == "MineshaftStartRooms")
+                        {
+                            GameObject mineshaftStartTile = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "MineshaftStartTile")?.Value;
+                            if (mineshaftStartTile != null)
+                            {
+                                // fun!
+                                AnimatedObjectTrigger redButton = mineshaftStartTile.transform.Find("ElevatorSpawn")?.GetComponentInChildren<SpawnSyncedObject>()?.spawnPrefab?.transform.Find("AnimContainer/controlBox/redButton")?.GetComponent<AnimatedObjectTrigger>();
+
+                                if (redButton != null && redButton.boolFalseAudios != null && redButton.boolFalseAudios.Length > 0)
+                                {
+                                    References.cruiserDashboardButton = redButton.boolFalseAudios[0];
+                                    References.sfx = redButton.GetComponent<AudioSource>()?.outputAudioMixerGroup;
+                                    Plugin.Logger.LogDebug("Cached dashboard button sound");
+                                    return;
                                 }
                             }
                         }

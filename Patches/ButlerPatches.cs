@@ -7,7 +7,7 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(ButlerEnemyAI), nameof(ButlerEnemyAI.Update))]
         [HarmonyPostfix]
-        static void ButlerEnemyAIPostUpdate(ButlerEnemyAI __instance)
+        static void ButlerEnemyAI_Post_Update(ButlerEnemyAI __instance)
         {
             if (__instance.isEnemyDead && __instance.buzzingAmbience.isPlaying && __instance.creatureAnimator.GetBool("popFinish"))
             {

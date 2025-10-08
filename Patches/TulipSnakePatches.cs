@@ -8,7 +8,7 @@ namespace EnemySoundFixes.Patches
     {
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.Update))]
         [HarmonyPostfix]
-        static void FlowerSnakeEnemyPostUpdate(FlowerSnakeEnemy __instance, bool ___flapping)
+        static void FlowerSnakeEnemy_Post_Update(FlowerSnakeEnemy __instance, bool ___flapping)
         {
             if (__instance.flappingAudio.isPlaying)
             {
@@ -42,7 +42,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.StopLeapOnLocalClient))]
         [HarmonyPostfix]
-        static void PostStopLeapOnLocalClient(FlowerSnakeEnemy __instance, bool landOnGround)
+        static void FlowerSnakeEnemy_Post_StopLeapOnLocalClient(FlowerSnakeEnemy __instance, bool landOnGround)
         {
             if (landOnGround && !__instance.isEnemyDead)
             {
@@ -53,7 +53,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.StopClingingOnLocalClient))]
         [HarmonyPostfix]
-        static void PostStopClingingOnLocalClient(FlowerSnakeEnemy __instance)
+        static void FlowerSnakeEnemy_Post_StopClingingOnLocalClient(FlowerSnakeEnemy __instance)
         {
             if (!__instance.isEnemyDead)
             {
@@ -64,7 +64,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.HitEnemy))]
         [HarmonyPrefix]
-        static void FlowerSnakeEnemyPreHitEnemy(FlowerSnakeEnemy __instance, bool playHitSFX)
+        static void FlowerSnakeEnemy_Pre_HitEnemy(FlowerSnakeEnemy __instance, bool playHitSFX)
         {
             // so tulip snake can play hit sound when killed
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead;
@@ -72,7 +72,7 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.KillEnemy))]
         [HarmonyPostfix]
-        static void FlowerSnakeEnemyPostKillEnemy(FlowerSnakeEnemy __instance, bool destroy)
+        static void FlowerSnakeEnemy_Post_KillEnemy(FlowerSnakeEnemy __instance, bool destroy)
         {
             // happens after creatureSFX.Stop()
             if (GeneralPatches.playHitSound)
