@@ -121,7 +121,12 @@ namespace EnemySoundFixes.Patches
         static void VehicleController_Pre_TryIgnition(VehicleController __instance, bool isLocalDriver)
         {
             if (!__instance.keyIsInIgnition && isLocalDriver && __instance.vehicleID == 0)
+            {
+                if (twistingKey != null)
+                    __instance.StopCoroutine(twistingKey);
+
                 twistingKey = __instance.StartCoroutine(TwistKey(__instance));
+            }
         }
 
         static IEnumerator TwistKey(VehicleController vehicleController)
@@ -147,7 +152,7 @@ namespace EnemySoundFixes.Patches
                 foreach (Transform button in new Transform[]{
                     triggers.Find("ChangeChannel (1)"),
                     triggers.Find("ChangeChannel (2)"),
-                    triggers.Find("ChangeChannel (3)"),
+                    //triggers.Find("ChangeChannel (3)"),
                     /*radar?.Find("TurnOnRadio"),
                     radar?.Find("ChangeChannel")*/})
                 {

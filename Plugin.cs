@@ -18,7 +18,7 @@ namespace EnemySoundFixes
     [BepInDependency(GUID_LOBBY_COMPATIBILITY, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.8.2";
+        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.8.3";
         internal static new ManualLogSource Logger;
 
         internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds, configShootTheDog;
