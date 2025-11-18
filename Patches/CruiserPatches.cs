@@ -114,6 +114,9 @@ namespace EnemySoundFixes.Patches
                 __instance.StopCoroutine(twistingKey);
                 twistingKey = null;
             }
+
+            if (__instance.honkingHorn && __instance.hornAudio.isPlaying && __instance.hornAudio.pitch < 1f)
+                __instance.hornAudio.Stop();
         }
 
         [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.TryIgnition))]

@@ -41,7 +41,7 @@ namespace EnemySoundFixes.Patches
                 .. __instance.testAllEnemiesLevel.DaytimeEnemies,
             ];
 
-            EnemyType mouthDog = null;
+            EnemyType mouthDog = null, giantKiwi = null;
             foreach (SpawnableEnemyWithRarity enemy in allEnemies)
             {
                 switch (enemy.enemyType.name)
@@ -96,6 +96,7 @@ namespace EnemySoundFixes.Patches
                         Plugin.Logger.LogDebug("Fix forest giant burning volume fade");
                         break;
                     case "GiantKiwi":
+                        giantKiwi = enemy.enemyType;
                         AudioSource giantKiwiFeatherPoofContainer = enemy.enemyType.enemyPrefab.GetComponent<GiantKiwiAI>()?.feathersPrefab?.GetComponent<AudioSource>();
                         if (giantKiwiFeatherPoofContainer != null)
                         {
@@ -121,6 +122,11 @@ namespace EnemySoundFixes.Patches
                 {
                     mouthDog.hitBodySFX = References.hitEnemyBody;
                     Plugin.Logger.LogDebug("Overwritten missing eyeless dog hit sound");
+                }
+                if (giantKiwi != null)
+                {
+                    giantKiwi.hitBodySFX = References.hitEnemyBody;
+                    Plugin.Logger.LogDebug("Overwritten missing giant sapsucker hit sound");
                 }
             }
         }
