@@ -275,29 +275,70 @@ namespace EnemySoundFixes.Patches
 
         static void PatchManorDoors(RoundManager roundManager)
         {
-            if (References.woodenDoorOpen == null || References.woodenDoorOpen.Length < 1 || References.woodenDoorClose == null || References.woodenDoorClose.Length < 1)
+            IndoorMapType manor = roundManager.dungeonFlowTypes.FirstOrDefault(dungeonFlowType => dungeonFlowType.dungeonFlow?.name == "Level2Flow");
+            if (manor != null)
             {
-                IndoorMapType manor = roundManager.dungeonFlowTypes.FirstOrDefault(dungeonFlowType => dungeonFlowType.dungeonFlow?.name == "Level2Flow");
-                if (manor != null)
-                {
-                    foreach (GraphNode node in manor.dungeonFlow.Nodes)
-                    {
-                        foreach (TileSet tileSet in node.TileSets)
-                        {
-                            if (tileSet.name == "Level2HallwayTiles")
-                            {
-                                GameObject manorStartRoom = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "ManorStartRoom")?.Value;
-                                if (manorStartRoom != null)
-                                {
-                                    // fun!
-                                    AnimatedObjectTrigger manorDoor = manorStartRoom.transform.Find("Doorways")?.GetComponentInChildren<Doorway>()?.ConnectorPrefabWeights?.FirstOrDefault(prefab => prefab.GameObject.name == "FancyDoorMapSpawn")?.GameObject.GetComponent<SpawnSyncedObject>()?.spawnPrefab?.GetComponentInChildren<AnimatedObjectTrigger>();
+                bool cache = References.woodenDoorOpen == null || References.woodenDoorOpen.Length < 1 || References.woodenDoorClose == null || References.woodenDoorClose.Length < 1;
 
-                                    if (manorDoor != null)
+                foreach (GraphLine line in manor.dungeonFlow.Lines)
+                {
+                    foreach (DungeonArchetype archetype in line.DungeonArchetypes)
+                    {
+                        foreach (TileSet tileSet in archetype.TileSets)
+                        {
+                            if (tileSet.name == "Level2HallwayTilesB")
+                            {
+                                if (cache)
+                                {
+                                    GameObject manorStartRoom = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "ManorStartRoomSmall")?.Value;
+                                    if (manorStartRoom != null)
                                     {
-                                        References.woodenDoorClose = manorDoor.boolFalseAudios;
-                                        References.woodenDoorOpen = manorDoor.boolTrueAudios;
-                                        Plugin.Logger.LogDebug("Cached wooden door sounds");
-                                        return;
+                                        // fun!
+                                        AnimatedObjectTrigger manorDoor = manorStartRoom.transform.Find("Doorways")?.GetComponentInChildren<Doorway>()?.ConnectorPrefabWeights?.FirstOrDefault(prefab => prefab.GameObject.name == "FancyDoorMapSpawn")?.GameObject.GetComponent<SpawnSyncedObject>()?.spawnPrefab?.GetComponentInChildren<AnimatedObjectTrigger>();
+
+                                        if (manorDoor != null)
+                                        {
+                                            References.woodenDoorClose = manorDoor.boolFalseAudios;
+                                            References.woodenDoorOpen = manorDoor.boolTrueAudios;
+                                            Plugin.Logger.LogDebug("Cached wooden door sounds");
+                                            cache = false;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (tileSet.name == "Level2RoomTiles")
+                            {
+                                GameObject greenhouseTile = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "GreenhouseTile")?.Value;
+                                if (greenhouseTile != null)
+                                {
+                                    GameObject greenhouseInteractables = greenhouseTile.transform.Find("GreenhouseSinkContainer/SpawnInteractables")?.GetComponent<SpawnSyncedObject>()?.spawnPrefab;
+                                    if (greenhouseInteractables != null)
+                                    {
+                                        if (greenhouseInteractables.transform.Find("SwingOpenCabinetAudio") == null)
+                                        {
+                                            GameObject swingOpenCabinetAudio = new("SwingOpenCabinetAudio");
+                                            swingOpenCabinetAudio.transform.SetParent(greenhouseInteractables.transform);
+                                            swingOpenCabinetAudio.transform.SetLocalPositionAndRotation(new(-10.5155334f, -5.33208466f, 5.79676247f), Quaternion.Euler(0f, 90f, 0f));
+                                            swingOpenCabinetAudio.transform.localScale = Vector3.one;
+
+                                            AudioSource thisAudioSource = swingOpenCabinetAudio.AddComponent<AudioSource>();
+                                            thisAudioSource.volume = 0.717f;
+                                            thisAudioSource.pitch = 0.91f;
+                                            thisAudioSource.spatialBlend = 1f;
+                                            thisAudioSource.spread = 41f;
+                                            thisAudioSource.rolloffMode = AudioRolloffMode.Linear;
+                                            thisAudioSource.minDistance = 1f;
+                                            thisAudioSource.maxDistance = 12f;
+
+                                            foreach (AnimatedObjectTrigger animatedObjectTrigger in greenhouseInteractables.GetComponentsInChildren<AnimatedObjectTrigger>())
+                                            {
+                                                if (animatedObjectTrigger.triggerAnimator != null && animatedObjectTrigger.triggerAnimator.name.StartsWith("BigCupboard"))
+                                                {
+                                                    animatedObjectTrigger.thisAudioSource = thisAudioSource;
+                                                    Plugin.Logger.LogDebug($"Fixed greenhouse door \"{animatedObjectTrigger.name}\"");
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -322,9 +363,9 @@ namespace EnemySoundFixes.Patches
             // oh boy... here comes part 2
             foreach (GraphLine line in mineshaft.dungeonFlow.Lines)
             {
-                foreach (DungeonArchetype archetypes in line.DungeonArchetypes)
+                foreach (DungeonArchetype archetype in line.DungeonArchetypes)
                 {
-                    foreach (TileSet tileSet in archetypes.TileSets)
+                    foreach (TileSet tileSet in archetype.TileSets)
                     {
                         if (tileSet.name == "Level3TunnelTiles")
                         {
