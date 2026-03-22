@@ -426,10 +426,17 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(EnemyVent), nameof(EnemyVent.OpenVentClientRpc))]
         [HarmonyPostfix]
-        static void PostOpenVentClientRpc(EnemyVent __instance)
+        static void EnemyVent_Post_OpenVentClientRpc(EnemyVent __instance)
         {
             __instance.isPlayingAudio = false;
             __instance.ventAudio.Stop();
+        }
+
+        [HarmonyPatch(typeof(GrabbableObject), nameof(GrabbableObject.PlayDropSFX))]
+        [HarmonyPrefix]
+        static bool GrabbableObject_Pre_PlayDropSFX(GrabbableObject __instance)
+        {
+            return __instance is not LockPicker lockPicker || !lockPicker.isOnDoor;
         }
     }
 }

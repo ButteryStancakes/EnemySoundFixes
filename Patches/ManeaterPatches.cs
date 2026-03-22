@@ -43,9 +43,9 @@ namespace EnemySoundFixes.Patches
                 maneaterAudio.Stop();
                 maneaterAudio.mute = true;
             }
-            __instance.creatureVoice.Stop();
-            __instance.creatureVoice.PlayOneShot(__instance.dieSFX);
-            Plugin.Logger.LogDebug("Maneater: Played backup death sound");
+            //__instance.creatureVoice.Stop();
+            //__instance.creatureVoice.PlayOneShot(__instance.dieSFX);
+            //Plugin.Logger.LogDebug("Maneater: Played backup death sound");
         }
     }
 }
