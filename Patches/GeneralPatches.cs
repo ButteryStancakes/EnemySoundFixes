@@ -438,5 +438,13 @@ namespace EnemySoundFixes.Patches
         {
             return __instance is not LockPicker lockPicker || !lockPicker.isOnDoor;
         }
+
+        [HarmonyPatch(typeof(Landmine), nameof(Landmine.Detonate))]
+        [HarmonyPostfix]
+        static void Landmine_Post_Detonate(Landmine __instance)
+        {
+            if (__instance.mineFarAudio != null && __instance.mineDetonateFar != null)
+                __instance.mineFarAudio.PlayOneShot(__instance.mineDetonateFar);
+        }
     }
 }
