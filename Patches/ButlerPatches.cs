@@ -3,7 +3,7 @@
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class ButlerPatches
+    static class ButlerPatches
     {
         [HarmonyPatch(typeof(ButlerEnemyAI), nameof(ButlerEnemyAI.Update))]
         [HarmonyPostfix]

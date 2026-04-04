@@ -7,12 +7,12 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.Audio;
 
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class GeneralPatches
+    static class GeneralPatches
     {
         internal static bool playHitSound;
 
@@ -87,7 +87,7 @@ namespace EnemySoundFixes.Patches
                         }
                         break;
                     case "ForestGiant":
-						ForestGiantAI forestGiantAI = enemy.enemyType.enemyPrefab.GetComponent<ForestGiantAI>();
+                        ForestGiantAI forestGiantAI = enemy.enemyType.enemyPrefab.GetComponent<ForestGiantAI>();
                         forestGiantAI.creatureSFX.spatialBlend = 1f;
                         Plugin.Logger.LogDebug("Fix forest giant global audio volume");
                         enemy.enemyType.hitBodySFX = StartOfRound.Instance.footstepSurfaces.FirstOrDefault(footstepSurface => footstepSurface.surfaceTag == "Wood").hitSurfaceSFX;
@@ -128,17 +128,6 @@ namespace EnemySoundFixes.Patches
                     giantKiwi.hitBodySFX = References.hitEnemyBody;
                     Plugin.Logger.LogDebug("Overwritten missing giant sapsucker hit sound");
                 }
-            }
-        }
-
-        [HarmonyPatch(typeof(AnimatedObjectTrigger), nameof(AnimatedObjectTrigger.Start))]
-        [HarmonyPostfix]
-        static void AnimatedObjectTrigger_Post_Start(AnimatedObjectTrigger __instance)
-        {
-            if (__instance.playAudiosInSequence && __instance.playParticle == null)
-            {
-                __instance.playParticleOnTimesTriggered = -1;
-                Plugin.Logger.LogDebug($"\"{__instance.name}.AnimatedObjectTrigger\" doesn't have particles attached");
             }
         }
 
@@ -189,29 +178,6 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(EntranceTeleport), nameof(EntranceTeleport.PlayAudioAtTeleportPositions))]
-        [HarmonyPrefix]
-        static bool EntranceTeleport_PlayAudioAtTeleportPositions(EntranceTeleport __instance, AudioSource ___exitPointAudio)
-        {
-            if (__instance.doorAudios == null || __instance.doorAudios.Length < 1)
-                return false;
-
-            AudioClip doorAudio = __instance.doorAudios[Random.Range(0, __instance.doorAudios.Length)];
-
-            if (__instance.entrancePointAudio != null)
-            {
-                __instance.entrancePointAudio.PlayOneShot(doorAudio);
-                WalkieTalkie.TransmitOneShotAudio(__instance.entrancePointAudio, doorAudio);
-            }
-            if (___exitPointAudio != null)
-            {
-                ___exitPointAudio.PlayOneShot(doorAudio);
-                WalkieTalkie.TransmitOneShotAudio(___exitPointAudio, doorAudio);
-            }
-
-            return false;
-        }
-
         [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.FinishGeneratingNewLevelClientRpc))]
         [HarmonyPostfix]
         static void RoundManager_Post_FinishGeneratingNewLevelClientRpc()
@@ -244,7 +210,7 @@ namespace EnemySoundFixes.Patches
                         if (animatedObjectTrigger.thisAudioSource != null)
                         {
                             Renderer rend = animatedObjectTrigger.transform.parent?.GetComponent<Renderer>();
-                            if (animatedObjectTrigger.name == "PowerBoxDoor" || animatedObjectTrigger.thisAudioSource.name == "storage door" || (rend != null && rend.sharedMaterials.Length == 7))
+                            if (animatedObjectTrigger.name == "PowerBoxDoor" || animatedObjectTrigger.thisAudioSource.name == "storage door")
                             {
                                 AudioClip[] temp = (AudioClip[])animatedObjectTrigger.boolFalseAudios.Clone();
                                 animatedObjectTrigger.boolFalseAudios = (AudioClip[])animatedObjectTrigger.boolTrueAudios.Clone();
@@ -275,10 +241,45 @@ namespace EnemySoundFixes.Patches
 
         static void PatchManorDoors(RoundManager roundManager)
         {
+            AudioMixerGroup sfxDiagetic = null;
+
             IndoorMapType manor = roundManager.dungeonFlowTypes.FirstOrDefault(dungeonFlowType => dungeonFlowType.dungeonFlow?.name == "Level2Flow");
             if (manor != null)
             {
                 bool cache = References.woodenDoorOpen == null || References.woodenDoorOpen.Length < 1 || References.woodenDoorClose == null || References.woodenDoorClose.Length < 1;
+
+                foreach (GraphNode node in manor.dungeonFlow.Nodes)
+                {
+                    foreach (TileSet tileSet in node.TileSets)
+                    {
+                        if (tileSet.name == "Level2CapTiles")
+                        {
+                            GameObject garageTile = tileSet.TileWeights.Weights.FirstOrDefault(weight => weight.Value?.name == "GarageTile")?.Value;
+                            if (garageTile != null)
+                            {
+                                GameObject garageInteractables = garageTile.transform.Find("SpawnInteractables")?.GetComponent<SpawnSyncedObject>()?.spawnPrefab;
+                                if (garageInteractables != null)
+                                {
+                                    AnimatedObjectTrigger garbageBin = garageInteractables.transform.Find("GarbageBinContainer/GarbageBin")?.GetComponent<AnimatedObjectTrigger>();
+                                    if (garbageBin != null && !garbageBin.GetComponent<AudioSource>())
+                                    {
+                                        AudioSource thisAudioSource = garbageBin.thisAudioSource;
+                                        garbageBin.thisAudioSource = garbageBin.gameObject.AddComponent<AudioSource>();
+                                        sfxDiagetic = thisAudioSource.outputAudioMixerGroup;
+                                        garbageBin.thisAudioSource.outputAudioMixerGroup = sfxDiagetic;
+                                        garbageBin.thisAudioSource.pitch = thisAudioSource.pitch;
+                                        garbageBin.thisAudioSource.spatialBlend = thisAudioSource.spatialBlend;
+                                        garbageBin.thisAudioSource.dopplerLevel = thisAudioSource.dopplerLevel;
+                                        garbageBin.thisAudioSource.spread = thisAudioSource.spread;
+                                        garbageBin.thisAudioSource.rolloffMode = thisAudioSource.rolloffMode;
+                                        garbageBin.thisAudioSource.minDistance = thisAudioSource.minDistance;
+                                        garbageBin.thisAudioSource.maxDistance = thisAudioSource.maxDistance;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 foreach (GraphLine line in manor.dungeonFlow.Lines)
                 {
@@ -322,6 +323,7 @@ namespace EnemySoundFixes.Patches
                                             swingOpenCabinetAudio.transform.localScale = Vector3.one;
 
                                             AudioSource thisAudioSource = swingOpenCabinetAudio.AddComponent<AudioSource>();
+                                            thisAudioSource.outputAudioMixerGroup = sfxDiagetic;
                                             thisAudioSource.volume = 0.717f;
                                             thisAudioSource.pitch = 0.91f;
                                             thisAudioSource.spatialBlend = 1f;
@@ -445,6 +447,192 @@ namespace EnemySoundFixes.Patches
         {
             if (__instance.mineFarAudio != null && __instance.mineDetonateFar != null)
                 __instance.mineFarAudio.PlayOneShot(__instance.mineDetonateFar);
+        }
+
+        [HarmonyPatch(typeof(ExtensionLadderItem), nameof(ExtensionLadderItem.StartLadderAnimation))]
+        [HarmonyPostfix]
+        static void ExtensionLadderItem_Post_StartLadderAnimation(ExtensionLadderItem __instance)
+        {
+            if (__instance.ladderBlinkWarning)
+            {
+                __instance.ladderBlinkWarning = false;
+                Plugin.Logger.LogDebug("Fixed broken extension ladder warning");
+            }
+        }
+
+        [HarmonyPatch(typeof(SoundManager), nameof(SoundManager.PlayRandomOutsideMusic))]
+        [HarmonyPrefix]
+        static bool SoundManager_Pre_PlayRandomOutsideMusic(SoundManager __instance)
+        {
+            return !Plugin.configEclipsesBlockMusic.Value || StartOfRound.Instance.currentLevel.currentWeather != LevelWeatherType.Eclipsed;
+        }
+
+        [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.Awake))]
+        [HarmonyPostfix]
+        [HarmonyWrapSafe]
+        static void StartOfRound_Post_Awake(StartOfRound __instance)
+        {
+            __instance.speakerAudioSource.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
+            __instance.shipDoorAudioSource.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
+            Plugin.Logger.LogDebug("Doppler level: Ship speakers");
+
+            __instance.VehiclesList.FirstOrDefault(vehicle => vehicle.name == "CompanyCruiser").GetComponent<VehicleController>().radioAudio.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
+            Plugin.Logger.LogDebug("Doppler level: Cruiser");
+
+            AudioSource stickyNote = __instance.elevatorTransform.Find("StickyNoteItem")?.GetComponent<AudioSource>();
+            if (stickyNote != null)
+            {
+                stickyNote.rolloffMode = AudioRolloffMode.Linear;
+                Plugin.Logger.LogDebug("Audio rolloff: Sticky note");
+            }
+            AudioSource clipboard = __instance.elevatorTransform.Find("ClipboardManual")?.GetComponent<AudioSource>();
+            if (clipboard != null)
+            {
+                clipboard.rolloffMode = AudioRolloffMode.Linear;
+                Plugin.Logger.LogDebug("Audio rolloff: Clipboard");
+            }
+
+            foreach (UnlockableItem unlockableItem in StartOfRound.Instance.unlockablesList.unlockables)
+            {
+                switch (unlockableItem.unlockableName)
+                {
+                    /*case "Television":
+                        unlockableItem.prefabObject.GetComponentInChildren<TVScript>().tvSFX.dopplerLevel = 0f * Plugin.configMusicDopplerLevel.Value;
+                        Plugin.Logger.LogDebug("Doppler level: Television");
+                        break;*/
+                    case "Record player":
+                        unlockableItem.prefabObject.GetComponentInChildren<AnimatedObjectTrigger>().thisAudioSource.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
+                        Plugin.Logger.LogDebug("Doppler level: Record player");
+                        break;
+                    case "Disco Ball":
+                        unlockableItem.prefabObject.GetComponentInChildren<CozyLights>().turnOnAudio.dopplerLevel = 0.92f * Plugin.configMusicDopplerLevel.Value;
+                        Plugin.Logger.LogDebug("Doppler level: Disco ball");
+                        break;
+                    case "Microwave":
+                        unlockableItem.prefabObject.transform.Find("MicrowaveBody").GetComponent<AudioSource>().playOnAwake = true;
+                        Plugin.Logger.LogDebug("Audio: Microwave");
+                        break;
+                }
+            }
+
+            AudioClip shovelPickUp = null, pickUpPlasticBin = null, dropPlastic1 = null, grabCardboardBox = null;
+            List<Item> metalSFXItems = [], plasticSFXItems = [], cardboardSFXItems = [];
+            foreach (Item item in StartOfRound.Instance.allItemsList.itemsList)
+            {
+                bool linearRolloff = false;
+
+                switch (item.name)
+                {
+                    case "Boombox":
+                        item.spawnPrefab.GetComponent<BoomboxItem>().boomboxAudio.dopplerLevel = 0.3f * Plugin.configMusicDopplerLevel.Value;
+                        Plugin.Logger.LogDebug("Doppler level: Boombox");
+                        break;
+                    case "BottleBin":
+                        pickUpPlasticBin = item.grabSFX;
+                        break;
+                    case "Brush":
+                    case "Candy":
+                    case "Dentures":
+                    //case "Phone":
+                    case "PillBottle":
+                    case "PlasticCup":
+                    case "Remote":
+                    case "SoccerBall":
+                    case "SteeringWheel":
+                    case "Toothpaste":
+                    case "ToyCube":
+                        plasticSFXItems.Add(item);
+                        break;
+                    case "Cog1":
+                    case "MapDevice":
+                    case "ZapGun":
+                        linearRolloff = true;
+                        break;
+                    case "FancyCup":
+                        metalSFXItems.Add(item);
+                        break;
+                    case "FancyPainting":
+                        cardboardSFXItems.Add(item);
+                        break;
+                    case "FishTestProp":
+                        linearRolloff = true;
+                        plasticSFXItems.Add(item);
+                        break;
+                    case "GarbageLid":
+                    case "MetalSheet":
+                        metalSFXItems.Add(item);
+                        break;
+                    case "Mug":
+                        dropPlastic1 = item.dropSFX;
+                        break;
+                    case "RedLocustHive":
+                        linearRolloff = true;
+                        break;
+                    case "TeaKettle":
+                        shovelPickUp = item.grabSFX;
+                        break;
+                    case "TragedyMask":
+                        grabCardboardBox = item.grabSFX;
+                        break;
+                }
+
+                if (linearRolloff)
+                {
+                    item.spawnPrefab.GetComponent<AudioSource>().rolloffMode = AudioRolloffMode.Linear;
+                    Plugin.Logger.LogDebug($"Audio rolloff: {item.itemName}");
+                }
+            }
+
+            if (shovelPickUp != null)
+            {
+                foreach (Item metalSFXItem in metalSFXItems)
+                {
+                    metalSFXItem.grabSFX = shovelPickUp;
+                    Plugin.Logger.LogDebug($"Audio: {metalSFXItem.itemName}");
+                }
+            }
+            if (pickUpPlasticBin != null)
+            {
+                foreach (Item plasticSFXItem in plasticSFXItems)
+                {
+                    plasticSFXItem.grabSFX = pickUpPlasticBin;
+                    Plugin.Logger.LogDebug($"Audio: {plasticSFXItem.itemName}");
+                    if (plasticSFXItem.name == "PillBottle" && dropPlastic1 != null)
+                        plasticSFXItem.dropSFX = dropPlastic1;
+                }
+            }
+            if (grabCardboardBox != null)
+            {
+                foreach (Item cardboardSFXItem in cardboardSFXItems)
+                {
+                    cardboardSFXItem.grabSFX = grabCardboardBox;
+                    Plugin.Logger.LogDebug($"Audio: {cardboardSFXItem.itemName}");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(ItemDropship), nameof(ItemDropship.Start))]
+        [HarmonyPostfix]
+        static void ItemDropship_Post_Start(ItemDropship __instance)
+        {
+            // fix doppler level for dropship (both music sources)
+            Transform music = __instance.transform.Find("Music");
+            if (music != null)
+            {
+                music.GetComponent<AudioSource>().dopplerLevel = 0.6f * Plugin.configMusicDopplerLevel.Value;
+                AudioSource musicFar = music.Find("Music (1)")?.GetComponent<AudioSource>();
+                if (musicFar != null)
+                    musicFar.dopplerLevel = 0.6f * Plugin.configMusicDopplerLevel.Value;
+                Plugin.Logger.LogDebug("Doppler level: Dropship");
+            }
+        }
+
+        [HarmonyPatch(typeof(MineshaftElevatorController), nameof(MineshaftElevatorController.OnEnable))]
+        [HarmonyPostfix]
+        static void MineshaftElevatorController_Post_OnEnable(MineshaftElevatorController __instance)
+        {
+            __instance.elevatorJingleMusic.dopplerLevel = 0.58f * Plugin.configMusicDopplerLevel.Value;
+            Plugin.Logger.LogDebug("Doppler level: Mineshaft elevator");
         }
     }
 }

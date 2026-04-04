@@ -1,8 +1,8 @@
 ﻿using BepInEx;
+using BepInEx.Bootstrap;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
-using BepInEx.Configuration;
-using BepInEx.Bootstrap;
 
 namespace EnemySoundFixes
 {
@@ -18,11 +18,12 @@ namespace EnemySoundFixes
     [BepInDependency(GUID_LOBBY_COMPATIBILITY, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.8.8";
+        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.9.0";
         internal static new ManualLogSource Logger;
 
-        internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds, configShootTheDog;
+        internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds, configShootTheDog, configEclipsesBlockMusic;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
+        internal static ConfigEntry<float> configMusicDopplerLevel;
 
         const string GUID_LOBBY_COMPATIBILITY = "BMX.LobbyCompatibility";
         const string GUID_SOUND_API = "me.loaforc.soundapi";
@@ -72,7 +73,20 @@ namespace EnemySoundFixes
                 "Misc",
                 "FixDoorSounds",
                 true,
-                "Fixes backwards open/close sounds on factory doors, breaker boxes, and storage locker doors. Fixes Rend and Adamance cabin doors using steel door sounds.");
+                "Fixes backwards open/close sounds on breaker boxes and storage locker doors. Fixes Rend and Adamance cabin doors using steel door sounds.");
+
+            configEclipsesBlockMusic = Config.Bind(
+                "Misc",
+                "EclipsesBlockMusic",
+                true,
+                "Prevents the morning/afternoon ambience music from playing during Eclipsed weather, which has its own ambient track.");
+
+            configMusicDopplerLevel = Config.Bind(
+                "Misc",
+                "MusicDopplerLevel",
+                0.333f,
+                "Controls how much Unity's simulated \"Doppler effect\" applies to music sources like the dropship, boombox, etc. (This is what causes pitch distortion when moving towards/away from the source of the music)\n" +
+                "1 is the same as vanilla. 0 will disable it completely (so music always plays at the correct pitch)");
 
             // migrate from previous version if necessary
             Config.Bind("Misc", "DontFixMasks", false, "Legacy setting, doesn't work");

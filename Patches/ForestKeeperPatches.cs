@@ -8,7 +8,7 @@ using UnityEngine;
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class ForestKeeperPatches
+    static class ForestKeeperPatches
     {
         const float TIME_PLAY_AUDIO_2 = (178 - 46) / 60f; // frame 178 at 60 fps - PlayAudio2 event, PlayAudio1 at frame 46
 

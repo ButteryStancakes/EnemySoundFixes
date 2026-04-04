@@ -3,7 +3,7 @@
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class BrackenPatches
+    static class BrackenPatches
     {
         [HarmonyPatch(typeof(FlowermanAI), nameof(FlowermanAI.HitEnemy))]
         [HarmonyPrefix]

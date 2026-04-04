@@ -3,7 +3,7 @@
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class SapsuckerPatches
+    static class SapsuckerPatches
     {
         [HarmonyPatch(typeof(GiantKiwiAI), nameof(GiantKiwiAI.Update))]
         [HarmonyPostfix]

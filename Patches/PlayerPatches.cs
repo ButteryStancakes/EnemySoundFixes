@@ -1,14 +1,14 @@
 ﻿using GameNetcodeStuff;
 using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Linq;
 
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class PlayerPatches
+    static class PlayerPatches
     {
         [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayer))]
         [HarmonyPrefix]

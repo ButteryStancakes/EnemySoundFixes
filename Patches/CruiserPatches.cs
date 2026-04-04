@@ -9,7 +9,7 @@ using UnityEngine;
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class CruiserPatches
+    static class CruiserPatches
     {
         static Coroutine twistingKey;
 

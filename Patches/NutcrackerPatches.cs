@@ -3,7 +3,7 @@
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class NutcrackerPatches
+    static class NutcrackerPatches
     {
         [HarmonyPatch(typeof(NutcrackerEnemyAI), nameof(NutcrackerEnemyAI.KillEnemy))]
         [HarmonyPostfix]

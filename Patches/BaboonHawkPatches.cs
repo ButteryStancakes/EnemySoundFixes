@@ -1,14 +1,14 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Linq;
 using UnityEngine;
 
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class BaboonHawkPatches
+    static class BaboonHawkPatches
     {
         [HarmonyPatch(typeof(BaboonBirdAI), nameof(BaboonBirdAI.HitEnemy))]
         [HarmonyPostfix]

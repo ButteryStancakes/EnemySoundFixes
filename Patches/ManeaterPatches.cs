@@ -4,7 +4,7 @@ using UnityEngine;
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class ManeaterPatches
+    static class ManeaterPatches
     {
         [HarmonyPatch(typeof(CaveDwellerAI), nameof(CaveDwellerAI.HitEnemy))]
         [HarmonyPrefix]

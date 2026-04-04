@@ -1,13 +1,13 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
-using System.Reflection.Emit;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class SnareFleaPatches
+    static class SnareFleaPatches
     {
         [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.delayedShriek), MethodType.Enumerator)]
         [HarmonyTranspiler]

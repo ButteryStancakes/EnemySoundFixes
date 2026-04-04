@@ -8,7 +8,7 @@ using UnityEngine;
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class MaskPatches
+    static class MaskPatches
     {
         static EntranceTeleport mainEntranceScript;
 

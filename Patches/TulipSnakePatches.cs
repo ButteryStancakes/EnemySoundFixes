@@ -4,7 +4,7 @@ using UnityEngine;
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class TulipSnakePatches
+    static class TulipSnakePatches
     {
         [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.Update))]
         [HarmonyPostfix]

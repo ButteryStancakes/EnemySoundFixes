@@ -8,7 +8,7 @@ using UnityEngine;
 namespace EnemySoundFixes.Patches
 {
     [HarmonyPatch]
-    class EyelessDogPatches
+    static class EyelessDogPatches
     {
         const float TIME_DROP_CARRIED_BODY = 5.01f;
 
