@@ -109,5 +109,13 @@ namespace EnemySoundFixes.Patches
 
             return codes;
         }
+
+        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.StopClingingToPlayer))]
+        [HarmonyPostfix]
+        static void CentipedeAI_Post_StopClingingToPlayer(CentipedeAI __instance)
+        {
+            // just in case
+            __instance.clingingToPlayer2DAudio.Stop();
+        }
     }
 }
