@@ -16,9 +16,10 @@ namespace EnemySoundFixes
     [BepInPlugin(PLUGIN_GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInDependency(GUID_SOUND_API, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(GUID_LOBBY_COMPATIBILITY, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(GUID_UPTURNED_VARIETY, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.9.1";
+        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.9.3";
         internal static new ManualLogSource Logger;
 
         internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds, configShootTheDog, configEclipsesBlockMusic;
@@ -27,7 +28,8 @@ namespace EnemySoundFixes
 
         const string GUID_LOBBY_COMPATIBILITY = "BMX.LobbyCompatibility";
         const string GUID_SOUND_API = "me.loaforc.soundapi";
-        internal static bool INSTALLED_SOUND_API;
+        const string GUID_UPTURNED_VARIETY = "butterystancakes.lethalcompany.upturnedvariety";
+        internal static bool INSTALLED_SOUND_API, INSTALLED_UPTURNED_VARIETY;
 
         void Awake()
         {
@@ -43,6 +45,12 @@ namespace EnemySoundFixes
             {
                 INSTALLED_SOUND_API = true;
                 Logger.LogInfo("CROSS-COMPATIBILITY - loaforcsSoundAPI detected");
+            }
+
+            if (Chainloader.PluginInfos.ContainsKey(GUID_UPTURNED_VARIETY))
+            {
+                INSTALLED_UPTURNED_VARIETY = true;
+                Logger.LogInfo("CROSS-COMPATIBILITY - Upturned Variety detected");
             }
 
             configBetterMimicSteps = Config.Bind(

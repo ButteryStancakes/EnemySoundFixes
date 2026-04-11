@@ -24,10 +24,7 @@ namespace EnemySoundFixes.Patches
             if (!destroy)
             {
                 // happens after creatureVoice.Stop()
-                AudioClip clip = Random.value > 0.5f ? __instance.enemyType.deathSFX : __instance.dieSFX;
-                __instance.creatureVoice.pitch = Random.Range(0.94f, 1.06f);
-                __instance.creatureVoice.PlayOneShot(clip);
-                WalkieTalkie.TransmitOneShotAudio(__instance.creatureVoice, clip, 0.85f);
+                __instance.creatureVoice.PlayOneShot(__instance.enemyType.deathSFX);
                 Plugin.Logger.LogDebug("Hoarding bug: Played backup death sound");
             }
         }

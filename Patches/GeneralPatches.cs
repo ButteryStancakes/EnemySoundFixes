@@ -515,7 +515,7 @@ namespace EnemySoundFixes.Patches
                 }
             }
 
-            AudioClip shovelPickUp = null, pickUpPlasticBin = null, dropPlastic1 = null, grabCardboardBox = null;
+            AudioClip shovelPickUp = null, pickUpPlasticBin = null, dropPlastic1 = null, dropPlastic2 = null, grabCardboardBox = null;
             List<Item> metalSFXItems = [], plasticSFXItems = [], cardboardSFXItems = [];
             foreach (Item item in StartOfRound.Instance.allItemsList.itemsList)
             {
@@ -531,32 +531,38 @@ namespace EnemySoundFixes.Patches
                         pickUpPlasticBin = item.grabSFX;
                         break;
                     case "Brush":
-                    case "Candy":
-                    case "Dentures":
-                    //case "Phone":
-                    case "PillBottle":
-                    case "PlasticCup":
+                    //case "Dentures":
+                    case "Phone":
+                    //case "PlasticCup":
                     case "Remote":
-                    case "SoccerBall":
+                    //case "SoccerBall":
                     case "SteeringWheel":
-                    case "Toothpaste":
                     case "ToyCube":
                         plasticSFXItems.Add(item);
+                        break;
+                    case "Candy":
+                    case "PillBottle":
+                    case "Toothpaste":
+                        item.grabSFX = null;
                         break;
                     case "Cog1":
                     case "MapDevice":
                     case "ZapGun":
                         linearRolloff = true;
                         break;
+                    case "DustPan":
+                        dropPlastic2 = item.dropSFX;
+                        break;
                     case "FancyCup":
-                        metalSFXItems.Add(item);
+                        if (!Plugin.INSTALLED_UPTURNED_VARIETY)
+                            metalSFXItems.Add(item);
                         break;
                     case "FancyPainting":
                         cardboardSFXItems.Add(item);
                         break;
                     case "FishTestProp":
                         linearRolloff = true;
-                        plasticSFXItems.Add(item);
+                        //plasticSFXItems.Add(item);
                         break;
                     case "GarbageLid":
                     case "MetalSheet":
@@ -597,8 +603,13 @@ namespace EnemySoundFixes.Patches
                 {
                     plasticSFXItem.grabSFX = pickUpPlasticBin;
                     Plugin.Logger.LogDebug($"Audio: {plasticSFXItem.itemName}");
-                    if (plasticSFXItem.name == "PillBottle" && dropPlastic1 != null)
-                        plasticSFXItem.dropSFX = dropPlastic1;
+                    if (plasticSFXItem.name == "PillBottle")
+                    {
+                        if (dropPlastic1 != null)
+                            plasticSFXItem.dropSFX = dropPlastic1;
+                    }
+                    else if (plasticSFXItem.name == "Phone" && dropPlastic2 != null)
+                        plasticSFXItem.dropSFX = dropPlastic2;
                 }
             }
             if (grabCardboardBox != null)
