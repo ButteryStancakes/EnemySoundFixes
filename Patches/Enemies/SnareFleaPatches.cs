@@ -4,12 +4,12 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(CentipedeAI))]
     static class SnareFleaPatches
     {
-        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.delayedShriek), MethodType.Enumerator)]
+        [HarmonyPatch(nameof(CentipedeAI.delayedShriek), MethodType.Enumerator)]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> CentipedeAI_Trans_delayedShriek(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
@@ -37,7 +37,7 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.Update))]
+        [HarmonyPatch(nameof(CentipedeAI.Update))]
         [HarmonyPrefix]
         static void CentipedeAI_Pre_Update(CentipedeAI __instance)
         {
@@ -49,7 +49,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.KillEnemy))]
+        [HarmonyPatch(nameof(CentipedeAI.KillEnemy))]
         [HarmonyPostfix]
         static void CentipedeAI_Post_KillEnemy(CentipedeAI __instance)
         {
@@ -71,7 +71,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.HitEnemy))]
+        [HarmonyPatch(nameof(CentipedeAI.HitEnemy))]
         [HarmonyPrefix]
         static void CentipedeAI_Pre_HitEnemy(CentipedeAI __instance)
         {
@@ -83,7 +83,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.fallFromCeiling), MethodType.Enumerator)]
+        [HarmonyPatch(nameof(CentipedeAI.fallFromCeiling), MethodType.Enumerator)]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> CentipedeAI_Trans_fallFromCeiling(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
@@ -110,7 +110,7 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(CentipedeAI), nameof(CentipedeAI.StopClingingToPlayer))]
+        [HarmonyPatch(nameof(CentipedeAI.StopClingingToPlayer))]
         [HarmonyPostfix]
         static void CentipedeAI_Post_StopClingingToPlayer(CentipedeAI __instance)
         {

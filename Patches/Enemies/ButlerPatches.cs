@@ -1,11 +1,11 @@
 ﻿using HarmonyLib;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(ButlerEnemyAI))]
     static class ButlerPatches
     {
-        [HarmonyPatch(typeof(ButlerEnemyAI), nameof(ButlerEnemyAI.Update))]
+        [HarmonyPatch(nameof(ButlerEnemyAI.Update))]
         [HarmonyPostfix]
         static void ButlerEnemyAI_Post_Update(ButlerEnemyAI __instance)
         {

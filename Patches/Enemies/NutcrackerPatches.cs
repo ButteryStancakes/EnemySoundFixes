@@ -1,11 +1,11 @@
 ﻿using HarmonyLib;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(NutcrackerEnemyAI))]
     static class NutcrackerPatches
     {
-        [HarmonyPatch(typeof(NutcrackerEnemyAI), nameof(NutcrackerEnemyAI.KillEnemy))]
+        [HarmonyPatch(nameof(NutcrackerEnemyAI.KillEnemy))]
         [HarmonyPostfix]
         static void NutcrackerEnemyAI_Post_KillEnemy(NutcrackerEnemyAI __instance, bool destroy)
         {

@@ -5,16 +5,16 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(MouthDogAI))]
     static class EyelessDogPatches
     {
         const float TIME_DROP_CARRIED_BODY = 5.01f;
 
         static Dictionary<MouthDogAI, (float Pitch, float Time)> dogPitches = [];
 
-        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillEnemy))]
+        [HarmonyPatch(nameof(MouthDogAI.KillEnemy))]
         [HarmonyPostfix]
         static void MouthDogAI_Post_KillEnemy(MouthDogAI __instance, bool destroy)
         {
@@ -44,19 +44,19 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.Start))]
+        [HarmonyPatch(nameof(MouthDogAI.Start))]
         [HarmonyPostfix]
         static void MouthDogAI_Post_Start(MouthDogAI __instance)
         {
             System.Random random = new(StartOfRound.Instance.randomMapSeed + (int)__instance.NetworkObjectId);
             if (random.Next(10) < 2)
-                __instance.creatureVoice.pitch = 0.6f + (0.7f * (float)random.NextDouble());
+                __instance.creatureVoice.pitch = 0.6f + 0.7f * (float)random.NextDouble();
             else
-                __instance.creatureVoice.pitch = 0.9f + (0.2f * (float)random.NextDouble());
+                __instance.creatureVoice.pitch = 0.9f + 0.2f * (float)random.NextDouble();
             Plugin.Logger.LogDebug("Eyeless dog: Reroll voice pitch (seeded random)");
         }
 
-        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.KillPlayerClientRpc))]
+        [HarmonyPatch(nameof(MouthDogAI.KillPlayerClientRpc))]
         [HarmonyPrefix]
         static void MouthDogAI_Pre_KillPlayerClientRpc(MouthDogAI __instance)
         {
@@ -69,7 +69,7 @@ namespace EnemySoundFixes.Patches
                 Plugin.Logger.LogWarning($"Eyeless dog #{__instance.GetInstanceID()}: Tried to initiate kill animation before ending previous kill animation");
         }
 
-        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.Update))]
+        [HarmonyPatch(nameof(MouthDogAI.Update))]
         [HarmonyPostfix]
         static void MouthDogAI_Post_Update(MouthDogAI __instance, bool ___inKillAnimation)
         {
@@ -86,7 +86,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.enterChaseMode), MethodType.Enumerator)]
+        [HarmonyPatch(nameof(MouthDogAI.enterChaseMode), MethodType.Enumerator)]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> MouthDogAI_Trans_EnterChaseMode(IEnumerable<CodeInstruction> instructions)
         {
@@ -122,7 +122,7 @@ namespace EnemySoundFixes.Patches
             dogPitches.Clear();
         }
 
-        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.HitEnemy))]
+        [HarmonyPatch(nameof(MouthDogAI.HitEnemy))]
         [HarmonyPrefix]
         static void MouthDogAI_Pre_HitEnemy(MouthDogAI __instance, int force, bool playHitSFX)
         {

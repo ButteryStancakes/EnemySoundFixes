@@ -7,10 +7,10 @@ using System.Reflection.Emit;
 
 namespace EnemySoundFixes.Patches
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(PlayerControllerB))]
     static class PlayerPatches
     {
-        [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayer))]
+        [HarmonyPatch(nameof(PlayerControllerB.DamagePlayer))]
         [HarmonyPrefix]
         static void PlayerControllerB_Pre_DamagePlayer(CauseOfDeath causeOfDeath, ref bool fallDamage)
         {
@@ -21,7 +21,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.DamagePlayerFromOtherClientClientRpc))]
+        [HarmonyPatch(nameof(PlayerControllerB.DamagePlayerFromOtherClientClientRpc))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> PlayerControllerB_Trans_DamagePlayerFromOtherClientClientRpc(IEnumerable<CodeInstruction> instructions)
         {

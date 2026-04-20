@@ -57,6 +57,11 @@ namespace EnemySoundFixes.Patches
                         enemy.enemyType.enemyPrefab.GetComponent<BaboonBirdAI>().dieSFX = enemy.enemyType.deathSFX;
                         Plugin.Logger.LogDebug("Overwritten missing baboon hawk death sound");
                         break;
+                    case "CadaverGrowths":
+                        enemy.enemyType.timeToPlayAudio = 1f;
+                        enemy.enemyType.loudnessMultiplier = 0.1f;
+                        Plugin.Logger.LogDebug("Adjust cadaver vent sounds");
+                        break;
                     case "CaveDweller":
                         CaveDwellerAI caveDwellerAI = enemy.enemyType.enemyPrefab.GetComponent<CaveDwellerAI>();
                         caveDwellerAI.clickingAudio1.volume = 0f;

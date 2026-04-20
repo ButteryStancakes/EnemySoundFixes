@@ -8,14 +8,14 @@ using UnityEngine;
 
 namespace EnemySoundFixes.Patches
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(VehicleController))]
     static class CruiserPatches
     {
         static Coroutine twistingKey;
 
-        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.RevCarClientRpc))]
-        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.TryIgnition), MethodType.Enumerator)]
-        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.SetIgnition))]
+        [HarmonyPatch(nameof(VehicleController.RevCarClientRpc))]
+        [HarmonyPatch(nameof(VehicleController.TryIgnition), MethodType.Enumerator)]
+        [HarmonyPatch(nameof(VehicleController.SetIgnition))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> VehicleController_Trans_EngineRev(IEnumerable<CodeInstruction> instructions)
         {
@@ -39,7 +39,7 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.SetVehicleAudioProperties))]
+        [HarmonyPatch(nameof(VehicleController.SetVehicleAudioProperties))]
         [HarmonyPrefix]
         static void VehicleController_Pre_SetVehicleAudioProperties(VehicleController __instance, AudioSource audio, ref bool audioActive)
         {
@@ -47,7 +47,7 @@ namespace EnemySoundFixes.Patches
                 audioActive = false;
         }
 
-        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.SetVehicleAudioProperties))]
+        [HarmonyPatch(nameof(VehicleController.SetVehicleAudioProperties))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> VehicleController_Trans_SetVehicleAudioProperties(IEnumerable<CodeInstruction> instructions)
         {
@@ -68,7 +68,7 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.LateUpdate))]
+        [HarmonyPatch(nameof(VehicleController.LateUpdate))]
         [HarmonyPostfix]
         static void VehicleController_Post_LateUpdate(VehicleController __instance)
         {
@@ -119,7 +119,7 @@ namespace EnemySoundFixes.Patches
                 __instance.hornAudio.Stop();
         }
 
-        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.TryIgnition))]
+        [HarmonyPatch(nameof(VehicleController.TryIgnition))]
         [HarmonyPrefix]
         static void VehicleController_Pre_TryIgnition(VehicleController __instance, bool isLocalDriver)
         {
@@ -141,7 +141,7 @@ namespace EnemySoundFixes.Patches
             yield break;
         }
 
-        [HarmonyPatch(typeof(VehicleController), nameof(VehicleController.Awake))]
+        [HarmonyPatch(nameof(VehicleController.Awake))]
         [HarmonyPrefix]
         static void VehicleController_Post_Awake(VehicleController __instance)
         {

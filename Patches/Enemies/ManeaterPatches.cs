@@ -1,19 +1,19 @@
 ﻿using HarmonyLib;
 using UnityEngine;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(CaveDwellerAI))]
     static class ManeaterPatches
     {
-        [HarmonyPatch(typeof(CaveDwellerAI), nameof(CaveDwellerAI.HitEnemy))]
+        [HarmonyPatch(nameof(CaveDwellerAI.HitEnemy))]
         [HarmonyPrefix]
         static void CaveDwellerAI_Pre_HitEnemy(CaveDwellerAI __instance, int force, bool playHitSFX)
         {
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= 1;
         }
 
-        [HarmonyPatch(typeof(CaveDwellerAI), nameof(CaveDwellerAI.KillEnemy))]
+        [HarmonyPatch(nameof(CaveDwellerAI.KillEnemy))]
         [HarmonyPostfix]
         static void CaveDwellerAI_Post_KillEnemy(CaveDwellerAI __instance, bool destroy)
         {

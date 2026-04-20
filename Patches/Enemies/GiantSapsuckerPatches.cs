@@ -1,11 +1,11 @@
 ﻿using HarmonyLib;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
-    static class SapsuckerPatches
+    [HarmonyPatch(typeof(GiantKiwiAI))]
+    static class GiantSapsuckerPatches
     {
-        [HarmonyPatch(typeof(GiantKiwiAI), nameof(GiantKiwiAI.Update))]
+        [HarmonyPatch(nameof(GiantKiwiAI.Update))]
         [HarmonyPostfix]
         static void GiantKiwiAI_Post_Update(GiantKiwiAI __instance)
         {

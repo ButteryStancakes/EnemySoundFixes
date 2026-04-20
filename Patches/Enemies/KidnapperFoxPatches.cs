@@ -4,12 +4,12 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(BushWolfEnemy))]
     static class KidnapperFoxPatches
     {
-        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.HitTongueLocalClient))]
+        [HarmonyPatch(nameof(BushWolfEnemy.HitTongueLocalClient))]
         [HarmonyPostfix]
         static void BushWolfEnemy_Post_HitTongueLocalClient(BushWolfEnemy __instance)
         {
@@ -18,7 +18,7 @@ namespace EnemySoundFixes.Patches
             Plugin.Logger.LogDebug("Kidnapper fox: Bit my tongue");
         }
 
-        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.Update))]
+        [HarmonyPatch(nameof(BushWolfEnemy.Update))]
         [HarmonyPostfix]
         static void BushWolfEnemy_Post_Update(BushWolfEnemy __instance, bool ___dragging)
         {
@@ -34,7 +34,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.CancelReelingPlayerIn))]
+        [HarmonyPatch(nameof(BushWolfEnemy.CancelReelingPlayerIn))]
         [HarmonyPrefix]
         static void BushWolfEnemy_Pre_CancelReelingPlayerIn(BushWolfEnemy __instance, ref bool ___dragging)
         {
@@ -45,13 +45,13 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.HitEnemy))]
+        [HarmonyPatch(nameof(BushWolfEnemy.HitEnemy))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> BushWolfEnemy_Trans_HitEnemy(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
-            MethodInfo cancelReelingPlayerIn = AccessTools.Method(typeof(BushWolfEnemy), "CancelReelingPlayerIn");
+            MethodInfo cancelReelingPlayerIn = AccessTools.Method(typeof(BushWolfEnemy), nameof(BushWolfEnemy.CancelReelingPlayerIn));
             Label label = generator.DefineLabel();
             codes[^1].labels.Add(label);
             for (int i = codes.Count - 1; i >= 0; i--)

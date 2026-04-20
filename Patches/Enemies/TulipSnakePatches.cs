@@ -1,12 +1,12 @@
 ﻿using HarmonyLib;
 using UnityEngine;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(FlowerSnakeEnemy))]
     static class TulipSnakePatches
     {
-        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.Update))]
+        [HarmonyPatch(nameof(FlowerSnakeEnemy.Update))]
         [HarmonyPostfix]
         static void FlowerSnakeEnemy_Post_Update(FlowerSnakeEnemy __instance, bool ___flapping)
         {
@@ -40,7 +40,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.StopLeapOnLocalClient))]
+        [HarmonyPatch(nameof(FlowerSnakeEnemy.StopLeapOnLocalClient))]
         [HarmonyPostfix]
         static void FlowerSnakeEnemy_Post_StopLeapOnLocalClient(FlowerSnakeEnemy __instance, bool landOnGround)
         {
@@ -51,7 +51,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.StopClingingOnLocalClient))]
+        [HarmonyPatch(nameof(FlowerSnakeEnemy.StopClingingOnLocalClient))]
         [HarmonyPostfix]
         static void FlowerSnakeEnemy_Post_StopClingingOnLocalClient(FlowerSnakeEnemy __instance)
         {
@@ -62,7 +62,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.HitEnemy))]
+        [HarmonyPatch(nameof(FlowerSnakeEnemy.HitEnemy))]
         [HarmonyPrefix]
         static void FlowerSnakeEnemy_Pre_HitEnemy(FlowerSnakeEnemy __instance, bool playHitSFX)
         {
@@ -70,7 +70,7 @@ namespace EnemySoundFixes.Patches
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead;
         }
 
-        [HarmonyPatch(typeof(FlowerSnakeEnemy), nameof(FlowerSnakeEnemy.KillEnemy))]
+        [HarmonyPatch(nameof(FlowerSnakeEnemy.KillEnemy))]
         [HarmonyPostfix]
         static void FlowerSnakeEnemy_Post_KillEnemy(FlowerSnakeEnemy __instance, bool destroy)
         {

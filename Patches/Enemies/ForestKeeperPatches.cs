@@ -5,14 +5,14 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(ForestGiantAI))]
     static class ForestKeeperPatches
     {
         const float TIME_PLAY_AUDIO_2 = (178 - 46) / 60f; // frame 178 at 60 fps - PlayAudio2 event, PlayAudio1 at frame 46
 
-        [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.Update))]
+        [HarmonyPatch(nameof(ForestGiantAI.Update))]
         [HarmonyPostfix]
         static void ForestGiantAI_Post_Update(ForestGiantAI __instance)
         {
@@ -35,8 +35,8 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.StopKillAnimation))]
-        [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.EatPlayerAnimation), MethodType.Enumerator)]
+        [HarmonyPatch(nameof(ForestGiantAI.StopKillAnimation))]
+        [HarmonyPatch(nameof(ForestGiantAI.EatPlayerAnimation), MethodType.Enumerator)]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> ForestGiantAI_Trans_Animation(IEnumerable<CodeInstruction> instructions)
         {
@@ -59,7 +59,7 @@ namespace EnemySoundFixes.Patches
             return codes;
         }
 
-        [HarmonyPatch(typeof(ForestGiantAI), nameof(ForestGiantAI.AnimationEventA))]
+        [HarmonyPatch(nameof(ForestGiantAI.AnimationEventA))]
         [HarmonyPostfix]
         static void ForestGiantAI_Post_AnimationEventA(ForestGiantAI __instance)
         {

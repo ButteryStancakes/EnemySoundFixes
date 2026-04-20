@@ -5,12 +5,12 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(BaboonBirdAI))]
     static class BaboonHawkPatches
     {
-        [HarmonyPatch(typeof(BaboonBirdAI), nameof(BaboonBirdAI.HitEnemy))]
+        [HarmonyPatch(nameof(BaboonBirdAI.HitEnemy))]
         [HarmonyPostfix]
         static void BaboonBirdAI_Post_HitEnemy(BaboonBirdAI __instance, bool playHitSFX)
         {
@@ -26,7 +26,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(BaboonBirdAI), nameof(BaboonBirdAI.OnCollideWithEnemy))]
+        [HarmonyPatch(nameof(BaboonBirdAI.OnCollideWithEnemy))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> BaboonBirdAI_Trans_OnCollideWithEnemy(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
         {

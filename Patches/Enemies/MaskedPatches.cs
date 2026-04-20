@@ -5,14 +5,14 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
-    static class MaskPatches
+    [HarmonyPatch(typeof(MaskedPlayerEnemy))]
+    static class MaskedPatches
     {
         static EntranceTeleport mainEntranceScript;
 
-        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.Start))]
+        [HarmonyPatch(nameof(MaskedPlayerEnemy.Start))]
         [HarmonyPostfix]
         static void MaskedPlayerEnemy_Post_Start(MaskedPlayerEnemy __instance)
         {
@@ -33,14 +33,14 @@ namespace EnemySoundFixes.Patches
             Plugin.Logger.LogDebug("Mimic: Footsteps match players");
         }
 
-        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.HitEnemy))]
+        [HarmonyPatch(nameof(MaskedPlayerEnemy.HitEnemy))]
         [HarmonyPrefix]
         static void MaskedPlayerEnemy_Pre_HitEnemy(MaskedPlayerEnemy __instance, int force, bool playHitSFX)
         {
             GeneralPatches.playHitSound = playHitSFX && !__instance.isEnemyDead && __instance.enemyHP <= force;
         }
 
-        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.KillEnemy))]
+        [HarmonyPatch(nameof(MaskedPlayerEnemy.KillEnemy))]
         [HarmonyPostfix]
         static void MaskedPlayerEnemy_Post_KillEnemy(MaskedPlayerEnemy __instance, bool destroy)
         {
@@ -56,7 +56,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.TeleportMaskedEnemy))]
+        [HarmonyPatch(nameof(MaskedPlayerEnemy.TeleportMaskedEnemy))]
         [HarmonyTranspiler]
         [HarmonyPriority(Priority.First)]
         static IEnumerable<CodeInstruction> MaskedPlayerEnemy_Trans_TeleportMaskedEnemy(IEnumerable<CodeInstruction> instructions)
@@ -81,7 +81,7 @@ namespace EnemySoundFixes.Patches
             return instructions;
         }
 
-        [HarmonyPatch(typeof(MaskedPlayerEnemy), nameof(MaskedPlayerEnemy.TeleportMaskedEnemy))]
+        [HarmonyPatch(nameof(MaskedPlayerEnemy.TeleportMaskedEnemy))]
         [HarmonyPostfix]
         static void MaskedPlayerEnemy_Post_TeleportMaskedEnemy()
         {

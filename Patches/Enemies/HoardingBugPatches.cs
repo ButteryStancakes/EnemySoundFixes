@@ -1,12 +1,12 @@
 ﻿using HarmonyLib;
 using UnityEngine;
 
-namespace EnemySoundFixes.Patches
+namespace EnemySoundFixes.Patches.Enemies
 {
-    [HarmonyPatch]
+    [HarmonyPatch(typeof(HoarderBugAI))]
     static class HoardingBugPatches
     {
-        [HarmonyPatch(typeof(HoarderBugAI), nameof(HoarderBugAI.KillEnemy))]
+        [HarmonyPatch(nameof(HoarderBugAI.KillEnemy))]
         [HarmonyPostfix]
         static void HoarderBugAI_Post_KillEnemy(HoarderBugAI __instance, bool destroy)
         {
@@ -29,7 +29,7 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(HoarderBugAI), nameof(HoarderBugAI.HitEnemy))]
+        [HarmonyPatch(nameof(HoarderBugAI.HitEnemy))]
         [HarmonyPrefix]
         static void HoarderBugAI_Pre_HitEnemy(HoarderBugAI __instance, int force, bool playHitSFX)
         {
