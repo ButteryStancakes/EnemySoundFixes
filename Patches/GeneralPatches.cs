@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 using UnityEngine.Audio;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace EnemySoundFixes.Patches
 {
@@ -522,6 +523,7 @@ namespace EnemySoundFixes.Patches
 
             AudioClip shovelPickUp = null, pickUpPlasticBin = null, dropPlastic1 = null, dropPlastic2 = null, grabCardboardBox = null;
             List<Item> metalSFXItems = [], plasticSFXItems = [], cardboardSFXItems = [];
+            Item pillBottle = null;
             foreach (Item item in StartOfRound.Instance.allItemsList.itemsList)
             {
                 bool linearRolloff = false;
@@ -546,7 +548,6 @@ namespace EnemySoundFixes.Patches
                         plasticSFXItems.Add(item);
                         break;
                     case "Candy":
-                    case "PillBottle":
                     case "Toothpaste":
                         item.grabSFX = null;
                         break;
@@ -576,6 +577,10 @@ namespace EnemySoundFixes.Patches
                     case "Mug":
                         dropPlastic1 = item.dropSFX;
                         break;
+                    case "PillBottle":
+                        pillBottle = item;
+                        item.grabSFX = null;
+                        break;
                     case "RedLocustHive":
                         linearRolloff = true;
                         break;
@@ -584,6 +589,15 @@ namespace EnemySoundFixes.Patches
                         break;
                     case "TragedyMask":
                         grabCardboardBox = item.grabSFX;
+                        break;
+                    case "WalkieTalkie":
+                        WalkieTalkie walkieTalkie = item.spawnPrefab.GetComponent<WalkieTalkie>();
+                        walkieTalkie.gameObject.AddComponent<RadioChatter>().walkieTalkie = walkieTalkie;
+                        Plugin.Logger.LogDebug("Walkie talkie: Let's make some noise!");
+                        break;
+                    case "WeedKillerBottle":
+                        item.spawnPrefab.GetComponent<SprayPaintItem>().sprayAudio.loop = false;
+                        Plugin.Logger.LogDebug("Loop: Weed killer");
                         break;
                 }
 
@@ -608,12 +622,7 @@ namespace EnemySoundFixes.Patches
                 {
                     plasticSFXItem.grabSFX = pickUpPlasticBin;
                     Plugin.Logger.LogDebug($"Audio: {plasticSFXItem.itemName}");
-                    if (plasticSFXItem.name == "PillBottle")
-                    {
-                        if (dropPlastic1 != null)
-                            plasticSFXItem.dropSFX = dropPlastic1;
-                    }
-                    else if (plasticSFXItem.name == "Phone" && dropPlastic2 != null)
+                    if (plasticSFXItem.name == "Phone" && dropPlastic2 != null)
                         plasticSFXItem.dropSFX = dropPlastic2;
                 }
             }
@@ -624,6 +633,11 @@ namespace EnemySoundFixes.Patches
                     cardboardSFXItem.grabSFX = grabCardboardBox;
                     Plugin.Logger.LogDebug($"Audio: {cardboardSFXItem.itemName}");
                 }
+            }
+            if (pillBottle != null && dropPlastic1 != null)
+            {
+                pillBottle.dropSFX = dropPlastic1;
+                Plugin.Logger.LogDebug($"Audio: {pillBottle.itemName}");
             }
         }
 
@@ -649,6 +663,38 @@ namespace EnemySoundFixes.Patches
         {
             __instance.elevatorJingleMusic.dopplerLevel = 0.58f * Plugin.configMusicDopplerLevel.Value;
             Plugin.Logger.LogDebug("Doppler level: Mineshaft elevator");
+        }
+
+        [HarmonyPatch(typeof(Terminal), nameof(Terminal.Start))]
+        [HarmonyPostfix]
+        static void Terminal_Post_Start(Terminal __instance)
+        {
+            BuyableVehicle cruiser = __instance.buyableVehicles.FirstOrDefault(buyableVehicle => buyableVehicle.vehicleDisplayName == "Cruiser");
+            if (cruiser != null)
+            {
+                AudioSource clipboardCruiser = cruiser.secondaryPrefab?.transform.GetComponent<AudioSource>();
+                if (clipboardCruiser != null)
+                {
+                    clipboardCruiser.rolloffMode = AudioRolloffMode.Linear;
+                    Plugin.Logger.LogDebug("Audio rolloff: Clipboard (Cruiser)");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(FlashlightItem), nameof(FlashlightItem.ItemActivate))]
+        [HarmonyPrefix]
+        static bool FlashlightItem_Pre_ItemActivate(FlashlightItem __instance, bool used)
+        {
+            if (__instance.itemProperties == null || __instance.itemProperties.itemId != 6)
+                return true;
+
+            if (__instance.flashlightInterferenceLevel < 2)
+                __instance.SwitchFlashlight(used);
+
+            __instance.flashlightAudio.PlayOneShot(__instance.flashlightClips[__instance.isBeingUsed ? 0 : 1]);
+            RoundManager.Instance.PlayAudibleNoise(__instance.transform.position, 7f, 0.4f, 0, __instance.isInElevator && StartOfRound.Instance.hangarDoorsClosed);
+
+            return false;
         }
     }
 }

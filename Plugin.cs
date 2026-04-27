@@ -19,10 +19,10 @@ namespace EnemySoundFixes
     [BepInDependency(GUID_UPTURNED_VARIETY, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.9.5";
+        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.9.6";
         internal static new ManualLogSource Logger;
 
-        internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds, configShootTheDog, configEclipsesBlockMusic;
+        internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds, configShootTheDog, configEclipsesBlockMusic, configWalkieHearsTalkies;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
         internal static ConfigEntry<float> configMusicDopplerLevel;
 
@@ -95,6 +95,12 @@ namespace EnemySoundFixes
                 0.333f,
                 "Controls how much Unity's simulated \"Doppler effect\" applies to music sources like the dropship, boombox, etc. (This is what causes pitch distortion when moving towards/away from the source of the music)\n" +
                 "1 is the same as vanilla. 0 will disable it completely (so music always plays at the correct pitch)");
+
+            configWalkieHearsTalkies = Config.Bind(
+                "Misc",
+                "WalkieHearsTalkies",
+                true,
+                "Restores a cut sound effect of idle chatter when walkie-talkies are in use. Only audible when standing near a walkie-talkie that is turned on, someone is transmitting their voice, and you do not have a walkie-talkie turned on in your inventory. (This does *not* actually repeat what is being spoken over the line - it's just SFX)");
 
             // migrate from previous version if necessary
             Config.Bind("Misc", "DontFixMasks", false, "Legacy setting, doesn't work");
