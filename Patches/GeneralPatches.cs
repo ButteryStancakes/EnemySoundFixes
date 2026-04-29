@@ -685,7 +685,7 @@ namespace EnemySoundFixes.Patches
         [HarmonyPrefix]
         static bool FlashlightItem_Pre_ItemActivate(FlashlightItem __instance, bool used)
         {
-            if (__instance.itemProperties == null || __instance.itemProperties.itemId != 6)
+            if (__instance.itemProperties == null || (__instance.itemProperties.itemId != 6 && __instance.itemProperties.name != "FlashLaserPointer"))
                 return true;
 
             if (__instance.flashlightInterferenceLevel < 2)
