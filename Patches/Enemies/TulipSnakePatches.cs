@@ -1,4 +1,8 @@
 ﻿using HarmonyLib;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using UnityEngine;
 
 namespace EnemySoundFixes.Patches.Enemies
@@ -84,6 +88,26 @@ namespace EnemySoundFixes.Patches.Enemies
                     Plugin.Logger.LogDebug("Tulip snake: Squish");
                 }
             }
+        }
+
+        [HarmonyPatch(nameof(FlowerSnakeEnemy.MakeChuckleClientRpc))]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> FlowerSnakeEnemy_Trans_MakeChuckleClientRpc(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            FieldInfo audioClips = AccessTools.Field(typeof(EnemyType), nameof(EnemyType.audioClips));
+            for (int i = 5; i < codes.Count; i++)
+            {
+                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == References.PLAY_RANDOM_CLIP && codes[i - 1].opcode == OpCodes.Ldc_I4_5 && codes[i - 5].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 5].operand == audioClips)
+                {
+                    codes[i - 1].opcode = OpCodes.Ldc_I4_4;
+                    Plugin.Logger.LogDebug("Transpiler (Tulip snake): Remove wingflap from chuckle pool");
+                    break;
+                }
+            }
+
+            return codes;
         }
     }
 }

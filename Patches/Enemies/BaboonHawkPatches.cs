@@ -10,7 +10,7 @@ namespace EnemySoundFixes.Patches.Enemies
     [HarmonyPatch(typeof(BaboonBirdAI))]
     static class BaboonHawkPatches
     {
-        [HarmonyPatch(nameof(BaboonBirdAI.HitEnemy))]
+        /*[HarmonyPatch(nameof(BaboonBirdAI.HitEnemy))]
         [HarmonyPostfix]
         static void BaboonBirdAI_Post_HitEnemy(BaboonBirdAI __instance, bool playHitSFX)
         {
@@ -24,7 +24,7 @@ namespace EnemySoundFixes.Patches.Enemies
                 else if (References.hitEnemyBody != null)
                     __instance.creatureSFX.PlayOneShot(References.hitEnemyBody);
             }
-        }
+        }*/
 
         [HarmonyPatch(nameof(BaboonBirdAI.OnCollideWithEnemy))]
         [HarmonyTranspiler]

@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using UnityEngine;
 
 namespace EnemySoundFixes.Patches.Enemies
 {

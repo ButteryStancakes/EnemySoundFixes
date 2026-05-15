@@ -8,7 +8,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using UnityEngine;
 using UnityEngine.Audio;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace EnemySoundFixes.Patches
 {
@@ -47,7 +46,7 @@ namespace EnemySoundFixes.Patches
             {
                 switch (enemy.enemyType.name)
                 {
-                    case "BaboonHawk":
+                    /*case "BaboonHawk":
                         if (References.baboonTakeDamage == null)
                         {
                             References.baboonTakeDamage = enemy.enemyType.hitBodySFX;
@@ -57,7 +56,7 @@ namespace EnemySoundFixes.Patches
                         Plugin.Logger.LogDebug("Overwritten baboon hawk damage sound");
                         enemy.enemyType.enemyPrefab.GetComponent<BaboonBirdAI>().dieSFX = enemy.enemyType.deathSFX;
                         Plugin.Logger.LogDebug("Overwritten missing baboon hawk death sound");
-                        break;
+                        break;*/
                     case "CadaverGrowths":
                         enemy.enemyType.timeToPlayAudio = 1f;
                         enemy.enemyType.loudnessMultiplier = 0.1f;
@@ -140,7 +139,7 @@ namespace EnemySoundFixes.Patches
         [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.OnCollideWithEnemy))]
         [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.OnCollideWithEnemy))]
         [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> EnemyAI_Trans_OnCollideWithEnemy(IEnumerable<CodeInstruction> instructions)
+        static IEnumerable<CodeInstruction> EnemyAI_Trans_OnCollideWithEnemy(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
         {
             List<CodeInstruction> codes = instructions.ToList();
 
@@ -156,7 +155,7 @@ namespace EnemySoundFixes.Patches
                         new CodeInstruction(OpCodes.Ldc_I4_0),
                         new CodeInstruction(OpCodes.Ceq)
                     ]);
-                    Plugin.Logger.LogDebug("Transpiler: Don't play hit sound when attacking dead enemy");
+                    Plugin.Logger.LogDebug($"Transpiler ({__originalMethod.DeclaringType}.{__originalMethod.Name}): Don't play hit sound when attacking dead enemy");
                     break;
                 }
             }
@@ -639,6 +638,23 @@ namespace EnemySoundFixes.Patches
                 pillBottle.dropSFX = dropPlastic1;
                 Plugin.Logger.LogDebug($"Audio: {pillBottle.itemName}");
             }
+
+            List<string> occludedItems = [];
+            foreach (Item item in StartOfRound.Instance.allItemsList.itemsList)
+            {
+                if (item == null)
+                    continue;
+
+                if (item.spawnPrefab?.GetComponentInChildren<OccludeAudio>())
+                    occludedItems.Add(item.name);
+            }
+            foreach (Item item in StartOfRound.Instance.allItemsList.itemsList)
+            {
+                if (item == null)
+                    continue;
+
+                Plugin.Logger.LogInfo($"{item.name} is {(occludedItems.Contains(item.name) ? string.Empty : "NOT ")}occluded");
+            }
         }
 
         [HarmonyPatch(typeof(ItemDropship), nameof(ItemDropship.Start))]
@@ -695,6 +711,14 @@ namespace EnemySoundFixes.Patches
             RoundManager.Instance.PlayAudibleNoise(__instance.transform.position, 7f, 0.4f, 0, __instance.isInElevator && StartOfRound.Instance.hangarDoorsClosed);
 
             return false;
+        }
+
+        [HarmonyPatch(typeof(CozyLights), nameof(CozyLights.SetAudio))]
+        [HarmonyPostfix]
+        static void CozyLights_Post_SetAudio(CozyLights __instance)
+        {
+            if (!__instance.cozyLightsOn && __instance.turnOnAudio.isPlaying && __instance.turnOnAudio.volume > 0.3f)
+                __instance.turnOnAudio.volume *= 0.3f;
         }
     }
 }
