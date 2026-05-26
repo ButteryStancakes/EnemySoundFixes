@@ -451,7 +451,11 @@ namespace EnemySoundFixes.Patches
         static void Landmine_Post_Detonate(Landmine __instance)
         {
             if (__instance.mineFarAudio != null && __instance.mineDetonateFar != null)
+            {
+                if (__instance.mineAudio != null)
+                    __instance.mineFarAudio.pitch = __instance.mineAudio.pitch;
                 __instance.mineFarAudio.PlayOneShot(__instance.mineDetonateFar);
+            }
         }
 
         [HarmonyPatch(typeof(ExtensionLadderItem), nameof(ExtensionLadderItem.StartLadderAnimation))]
@@ -638,23 +642,6 @@ namespace EnemySoundFixes.Patches
                 pillBottle.dropSFX = dropPlastic1;
                 Plugin.Logger.LogDebug($"Audio: {pillBottle.itemName}");
             }
-
-            List<string> occludedItems = [];
-            foreach (Item item in StartOfRound.Instance.allItemsList.itemsList)
-            {
-                if (item == null)
-                    continue;
-
-                if (item.spawnPrefab?.GetComponentInChildren<OccludeAudio>())
-                    occludedItems.Add(item.name);
-            }
-            foreach (Item item in StartOfRound.Instance.allItemsList.itemsList)
-            {
-                if (item == null)
-                    continue;
-
-                Plugin.Logger.LogInfo($"{item.name} is {(occludedItems.Contains(item.name) ? string.Empty : "NOT ")}occluded");
-            }
         }
 
         [HarmonyPatch(typeof(ItemDropship), nameof(ItemDropship.Start))]
@@ -681,9 +668,9 @@ namespace EnemySoundFixes.Patches
             Plugin.Logger.LogDebug("Doppler level: Mineshaft elevator");
         }
 
-        [HarmonyPatch(typeof(Terminal), nameof(Terminal.Start))]
+        [HarmonyPatch(typeof(Terminal), nameof(Terminal.Awake))]
         [HarmonyPostfix]
-        static void Terminal_Post_Start(Terminal __instance)
+        static void Terminal_Post_Awake(Terminal __instance)
         {
             BuyableVehicle cruiser = __instance.buyableVehicles.FirstOrDefault(buyableVehicle => buyableVehicle.vehicleDisplayName == "Cruiser");
             if (cruiser != null)
@@ -693,6 +680,38 @@ namespace EnemySoundFixes.Patches
                 {
                     clipboardCruiser.rolloffMode = AudioRolloffMode.Linear;
                     Plugin.Logger.LogDebug("Audio rolloff: Clipboard (Cruiser)");
+                }
+
+                if (!Plugin.INSTALLED_VERSION55_COMPANY_CRUISER)
+                {
+                    VehicleController vehicleController = cruiser.vehiclePrefab?.GetComponent<VehicleController>();
+                    if (vehicleController != null)
+                    {
+                        AudioClip companyCruiserEngineRun = null, cruiserEngineRun2 = null;
+                        try
+                        {
+                            AssetBundle sfxBundle = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "enemysoundfixes"));
+                            companyCruiserEngineRun = sfxBundle.LoadAsset<AudioClip>("CompanyCruiser_EngineRun");
+                            cruiserEngineRun2 = sfxBundle.LoadAsset<AudioClip>("Cruiser_EngineRun2");
+                            sfxBundle.Unload(false);
+                        }
+                        catch
+                        {
+                            Plugin.Logger.LogError("Encountered some error loading assets from bundle \"enemysoundfixes\". Did you install the plugin correctly?");
+                        }
+
+                        if (companyCruiserEngineRun != null)
+                        {
+                            vehicleController.engineRun = companyCruiserEngineRun;
+                            Plugin.Logger.LogDebug("Cruiser: Engine run");
+                        }
+
+                        if (cruiserEngineRun2 != null)
+                        {
+                            vehicleController.engineRun2 = cruiserEngineRun2;
+                            Plugin.Logger.LogDebug("Cruiser: Engine run #2");
+                        }
+                    }
                 }
             }
         }

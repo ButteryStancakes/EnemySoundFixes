@@ -135,7 +135,7 @@ namespace EnemySoundFixes.Patches
         static IEnumerator TwistKey(VehicleController vehicleController)
         {
             yield return new WaitForSeconds(0.85f);
-            if (vehicleController.keyIgnitionCoroutine != null && vehicleController.currentDriver != null)
+            if (vehicleController != null && vehicleController.keyIgnitionCoroutine != null && vehicleController.currentDriver != null)
                 vehicleController.currentDriver.movementAudio.PlayOneShot(vehicleController.twistKey);
             twistingKey = null;
             yield break;

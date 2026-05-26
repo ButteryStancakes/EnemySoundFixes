@@ -17,19 +17,21 @@ namespace EnemySoundFixes
     [BepInDependency(GUID_SOUND_API, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(GUID_LOBBY_COMPATIBILITY, BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency(GUID_UPTURNED_VARIETY, BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency(GUID_VERSION55_COMPANY_CRUISER, BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.9.10";
+        internal const string PLUGIN_GUID = "butterystancakes.lethalcompany.enemysoundfixes", PLUGIN_NAME = "Enemy Sound Fixes", PLUGIN_VERSION = "1.9.11";
         internal static new ManualLogSource Logger;
 
         internal static ConfigEntry<bool> configThumperNoThunder, configBetterMimicSteps, configFixDoorSounds, configShootTheDog, configEclipsesBlockMusic, configWalkieHearsTalkies;
         internal static ConfigEntry<CruiserMute> configSpaceMutesCruiser;
         internal static ConfigEntry<float> configMusicDopplerLevel;
 
-        const string GUID_LOBBY_COMPATIBILITY = "BMX.LobbyCompatibility";
-        const string GUID_SOUND_API = "me.loaforc.soundapi";
-        const string GUID_UPTURNED_VARIETY = "butterystancakes.lethalcompany.upturnedvariety";
-        internal static bool INSTALLED_SOUND_API, INSTALLED_UPTURNED_VARIETY;
+        const string GUID_LOBBY_COMPATIBILITY = "BMX.LobbyCompatibility",
+                     GUID_SOUND_API = "me.loaforc.soundapi",
+                     GUID_UPTURNED_VARIETY = "butterystancakes.lethalcompany.upturnedvariety",
+                     GUID_VERSION55_COMPANY_CRUISER = "scandal.v55cruiser";
+        internal static bool INSTALLED_SOUND_API, INSTALLED_UPTURNED_VARIETY, INSTALLED_VERSION55_COMPANY_CRUISER;
 
         void Awake()
         {
@@ -51,6 +53,12 @@ namespace EnemySoundFixes
             {
                 INSTALLED_UPTURNED_VARIETY = true;
                 Logger.LogInfo("CROSS-COMPATIBILITY - Upturned Variety detected");
+            }
+
+            if (Chainloader.PluginInfos.ContainsKey(GUID_VERSION55_COMPANY_CRUISER))
+            {
+                INSTALLED_VERSION55_COMPANY_CRUISER = true;
+                Logger.LogInfo("CROSS-COMPATIBILITY - Version-55 Company Cruiser detected");
             }
 
             configBetterMimicSteps = Config.Bind(
