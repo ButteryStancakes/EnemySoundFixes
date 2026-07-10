@@ -524,6 +524,18 @@ namespace EnemySoundFixes.Patches
                 }
             }
 
+            try
+            {
+                AssetBundle sfxBundle = AssetBundle.LoadFromFile(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "enemysoundfixes"));
+                References.empty = sfxBundle.LoadAsset<AudioClip>("empty");
+                sfxBundle.Unload(false);
+            }
+            catch
+            {
+                // it's ok if this fails to load, References.empty == null will replicate previous behavior from earlier versions
+                Plugin.Logger.LogWarning("Encountered some error loading assets from bundle \"enemysoundfixes\". Did you install the plugin correctly?");
+            }
+
             AudioClip shovelPickUp = null, pickUpPlasticBin = null, dropPlastic1 = null, dropPlastic2 = null, grabCardboardBox = null;
             List<Item> metalSFXItems = [], plasticSFXItems = [], cardboardSFXItems = [];
             Item pillBottle = null;
@@ -552,7 +564,7 @@ namespace EnemySoundFixes.Patches
                         break;
                     case "Candy":
                     case "Toothpaste":
-                        item.grabSFX = null;
+                        item.grabSFX = References.empty;
                         break;
                     case "Cog1":
                     case "MapDevice":
@@ -582,7 +594,7 @@ namespace EnemySoundFixes.Patches
                         break;
                     case "PillBottle":
                         pillBottle = item;
-                        item.grabSFX = null;
+                        item.grabSFX = References.empty;
                         break;
                     case "RedLocustHive":
                         linearRolloff = true;

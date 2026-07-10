@@ -19,7 +19,7 @@ namespace EnemySoundFixes
                                             HIT_ENEMY = AccessTools.Method(typeof(EnemyAI), nameof(EnemyAI.HitEnemy)),
                                             PLAY_RANDOM_CLIP = AccessTools.Method(typeof(RoundManager), nameof(RoundManager.PlayRandomClip));
 
-        internal static AudioClip /*baboonTakeDamage,*/ hitEnemyBody, cruiserDashboardButton;
+        internal static AudioClip /*baboonTakeDamage,*/ hitEnemyBody, cruiserDashboardButton, empty;
         internal static AudioClip[] woodenDoorOpen, woodenDoorClose;
         internal static AudioMixerGroup sfx;
     }

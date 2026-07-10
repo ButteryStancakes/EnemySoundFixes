@@ -22,7 +22,7 @@ namespace EnemySoundFixes.Patches.Enemies
             if (GeneralPatches.playHitSound)
             {
                 GeneralPatches.playHitSound = false;
-                if (!destroy && References.hitEnemyBody != null)
+                if (!destroy && References.hitEnemyBody != null && __instance.IsOwner)
                 {
                     __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
                     Plugin.Logger.LogDebug("Mouth dog: Play hit sound on death");

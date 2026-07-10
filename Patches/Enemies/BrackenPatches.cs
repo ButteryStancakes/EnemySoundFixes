@@ -20,7 +20,7 @@ namespace EnemySoundFixes.Patches.Enemies
             if (GeneralPatches.playHitSound)
             {
                 GeneralPatches.playHitSound = false;
-                if (!destroy)
+                if (!destroy && __instance.IsOwner)
                 {
                     __instance.creatureSFX.PlayOneShot(__instance.enemyType.hitBodySFX);
                     Plugin.Logger.LogDebug("Bracken: Play hit sound on death");
