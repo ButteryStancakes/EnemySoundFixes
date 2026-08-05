@@ -106,7 +106,7 @@ namespace EnemySoundFixes.Patches
                 //__instance.extremeStressAudio.mute = false;
                 __instance.radioAudio.mute = false;
                 __instance.radioInterference.mute = false;
-                __instance.pushAudio.mute = false;
+                __instance.pushAudio.mute = __instance.magnetedToShip;
             }
 
             if (twistingKey != null && __instance.keyIgnitionCoroutine == null)
@@ -177,6 +177,23 @@ namespace EnemySoundFixes.Patches
                     Plugin.Logger.LogDebug($"Cruiser: Dashboard button (\"{button.name}\")");
                 }
             }
+        }
+
+        [HarmonyPatch(nameof(VehicleController.PushTruckClientRpc))]
+        [HarmonyPatch(nameof(VehicleController.PushTruckFromOwnerClientRpc))]
+        [HarmonyPrefix]
+        static void VehicleController_Pre_PushTruckClientRpc(VehicleController __instance, ref float __state)
+        {
+            __state = __instance.turbulenceAmount;
+        }
+
+        [HarmonyPatch(nameof(VehicleController.PushTruckClientRpc))]
+        [HarmonyPatch(nameof(VehicleController.PushTruckFromOwnerClientRpc))]
+        [HarmonyPostfix]
+        static void VehicleController_Post_PushTruckClientRpc(VehicleController __instance, float __state)
+        {
+            if (__instance.pushAudio.mute && __instance.turbulenceAmount > __state)
+                __instance.turbulenceAmount = __state;
         }
     }
 }
