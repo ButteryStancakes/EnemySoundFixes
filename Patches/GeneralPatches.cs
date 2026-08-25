@@ -145,7 +145,7 @@ namespace EnemySoundFixes.Patches
 
             for (int i = 2; i < codes.Count; i++)
             {
-                if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == References.HIT_ENEMY)
+                if (codes[i].opcode == OpCodes.Callvirt && codes[i].operand as MethodInfo == References.HIT_ENEMY)
                 {
                     codes.RemoveAt(i - 2);
                     codes.InsertRange(i - 2,
@@ -156,11 +156,12 @@ namespace EnemySoundFixes.Patches
                         new CodeInstruction(OpCodes.Ceq)
                     ]);
                     Plugin.Logger.LogDebug($"Transpiler ({__originalMethod.DeclaringType}.{__originalMethod.Name}): Don't play hit sound when attacking dead enemy");
-                    break;
+                    return codes;
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError($"{__originalMethod.DeclaringType}.{__originalMethod.Name} transpiler failed");
+            return instructions;
         }
 
         [HarmonyPatch(typeof(StormyWeather), nameof(StormyWeather.PlayThunderEffects))]
@@ -172,15 +173,16 @@ namespace EnemySoundFixes.Patches
             FieldInfo shipCreakSFX = AccessTools.Field(typeof(StartOfRound), nameof(StartOfRound.shipCreakSFX));
             for (int i = 5; i < codes.Count; i++)
             {
-                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == References.PLAY_RANDOM_CLIP && codes[i - 1].opcode == OpCodes.Ldc_I4 && (int)codes[i - 1].operand == 1000 && codes[i - 5].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 5].operand == shipCreakSFX)
+                if (codes[i].opcode == OpCodes.Call && codes[i].operand as MethodInfo == References.PLAY_RANDOM_CLIP && codes[i - 1].opcode == OpCodes.Ldc_I4 && (int)codes[i - 1].operand == 1000 && codes[i - 5].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 5].operand == shipCreakSFX)
                 {
                     codes[i - 1].opcode = OpCodes.Ldc_I4_6;
                     Plugin.Logger.LogDebug("Transpiler (Stormy weather): No \"Hey\" when ship is struck");
-                    break;
+                    return codes;
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError("Stormy weather transpiler failed");
+            return instructions;
         }
 
         [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.FinishGeneratingNewLevelClientRpc))]

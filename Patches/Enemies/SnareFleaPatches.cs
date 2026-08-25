@@ -30,11 +30,12 @@ namespace EnemySoundFixes.Patches.Enemies
                         new CodeInstruction(OpCodes.Ret)
                     ]);
                     Plugin.Logger.LogDebug("Transpiler (Snare flea): Don't shriek when dead (A)");
-                    break;
+                    return codes;
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError("Snare flea shriek transpiler failed");
+            return instructions;
         }
 
         [HarmonyPatch(nameof(CentipedeAI.Update))]
@@ -93,7 +94,7 @@ namespace EnemySoundFixes.Patches.Enemies
             FieldInfo shriekClips = AccessTools.Field(typeof(CentipedeAI), nameof(CentipedeAI.shriekClips));
             for (int i = 8; i < codes.Count - 2; i++)
             {
-                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == References.PLAY_RANDOM_CLIP && codes[i - 5].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 5].operand == shriekClips)
+                if (codes[i].opcode == OpCodes.Call && codes[i].operand as MethodInfo == References.PLAY_RANDOM_CLIP && codes[i - 5].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 5].operand == shriekClips)
                 {
                     codes[i + 2].labels.Add(label);
                     codes.InsertRange(i - 8,
@@ -103,10 +104,11 @@ namespace EnemySoundFixes.Patches.Enemies
                         new CodeInstruction(OpCodes.Brtrue, label)
                     ]);
                     Plugin.Logger.LogDebug("Transpiler (Snare flea): Don't shriek when dead (B)");
-                    break;
+                    return codes;
                 }
             }
 
+            Plugin.Logger.LogError("Snare flea fall transpiler failed");
             return codes;
         }
 

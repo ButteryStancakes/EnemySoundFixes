@@ -94,16 +94,17 @@ namespace EnemySoundFixes.Patches.Enemies
 
             for (int i = 1; i < codes.Count; i++)
             {
-                if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == References.PLAY_ONE_SHOT && codes[i - 1].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 1].operand == AccessTools.Field(typeof(MouthDogAI), nameof(MouthDogAI.breathingSFX)))
+                if (codes[i].opcode == OpCodes.Callvirt && codes[i].operand as MethodInfo == References.PLAY_ONE_SHOT && codes[i - 1].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 1].operand == AccessTools.Field(typeof(MouthDogAI), nameof(MouthDogAI.breathingSFX)))
                 {
                     for (int j = i - 4; j <= i; j++)
                         codes[j].opcode = OpCodes.Nop;
                     Plugin.Logger.LogDebug("Transpiler (Eyeless dog): Fix overlapping breathing");
-                    break;
+                    return codes;
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError("Eyeless dog transpiler failed");
+            return instructions;
         }
 
         [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.SubtractFromPowerLevel))]

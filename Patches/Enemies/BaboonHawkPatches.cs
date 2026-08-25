@@ -35,11 +35,11 @@ namespace EnemySoundFixes.Patches.Enemies
             MethodInfo resetTrigger = AccessTools.Method(typeof(Animator), nameof(Animator.ResetTrigger), [typeof(string)]), roundManagerInstance = AccessTools.DeclaredPropertyGetter(typeof(RoundManager), nameof(RoundManager.Instance));
             for (int i = 3; i < codes.Count; i++)
             {
-                if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == resetTrigger)
+                if (codes[i].opcode == OpCodes.Callvirt && codes[i].operand as MethodInfo == resetTrigger)
                 {
                     for (int j = i + 1; j < codes.Count; j++)
                     {
-                        if (codes[j].opcode == OpCodes.Call && (MethodInfo)codes[j].operand == roundManagerInstance)
+                        if (codes[j].opcode == OpCodes.Call && codes[j].operand as MethodInfo == roundManagerInstance)
                         {
                             Label label = generator.DefineLabel();
                             codes[j].labels.Add(label);
@@ -54,7 +54,7 @@ namespace EnemySoundFixes.Patches.Enemies
                         }
                     }
                 }
-                else if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == References.HIT_ENEMY)
+                else if (codes[i].opcode == OpCodes.Callvirt && codes[i].operand as MethodInfo == References.HIT_ENEMY)
                 {
                     codes.RemoveAt(i - 2);
                     codes.InsertRange(i - 2,

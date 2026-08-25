@@ -29,7 +29,7 @@ namespace EnemySoundFixes.Patches
 
             for (int i = 3; i < codes.Count; i++)
             {
-                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == References.DAMAGE_PLAYER)
+                if (codes[i].opcode == OpCodes.Call && codes[i].operand as MethodInfo == References.DAMAGE_PLAYER)
                 {
                     for (int j = i - 1; j > 0; j--)
                     {
@@ -37,13 +37,14 @@ namespace EnemySoundFixes.Patches
                         {
                             codes[j + 1].opcode = OpCodes.Ldc_I4_0; // hasDamageSFX: false
                             Plugin.Logger.LogDebug("Transpiler (Players): Melee weapons don't stack hit sounds");
-                            break;
+                            return codes;
                         }
                     }
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError("Melee damage transpiler failed");
+            return instructions;
         }
     }
 }

@@ -66,7 +66,7 @@ namespace EnemySoundFixes.Patches.Enemies
             MethodInfo findMainEntranceScript = AccessTools.Method(typeof(RoundManager), nameof(RoundManager.FindMainEntranceScript));
             for (int i = codes.Count - 2; i >= 0; i--)
             {
-                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == findMainEntranceScript)
+                if (codes[i].opcode == OpCodes.Call && codes[i].operand as MethodInfo == findMainEntranceScript)
                 {
                     codes.RemoveAt(i);
                     codes.RemoveAt(i - 1);

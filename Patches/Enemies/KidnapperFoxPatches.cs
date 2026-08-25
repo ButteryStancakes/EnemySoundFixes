@@ -56,7 +56,7 @@ namespace EnemySoundFixes.Patches.Enemies
             codes[^1].labels.Add(label);
             for (int i = codes.Count - 1; i >= 0; i--)
             {
-                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == cancelReelingPlayerIn)
+                if (codes[i].opcode == OpCodes.Call && codes[i].operand as MethodInfo == cancelReelingPlayerIn)
                 {
                     codes.InsertRange(i + 1, [
                         new CodeInstruction(OpCodes.Ldarg_0),
@@ -64,11 +64,12 @@ namespace EnemySoundFixes.Patches.Enemies
                         new CodeInstruction(OpCodes.Brtrue, label)
                     ]);
                     Plugin.Logger.LogDebug("Transpiler (Kidnapper fox): Don't cry when dead");
-                    break;
+                    return codes;
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError("Kidnapper fox transpiler failed");
+            return instructions;
         }
     }
 }

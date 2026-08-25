@@ -52,11 +52,12 @@ namespace EnemySoundFixes.Patches.Enemies
                         codes[j].operand = null;
                     }
                     Plugin.Logger.LogDebug("Transpiler (Forest Keeper): Don't interrupt voice");
-                    break;
+                    return codes;
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError("Forest Keeper transpiler failed");
+            return instructions;
         }
 
         [HarmonyPatch(nameof(ForestGiantAI.AnimationEventA))]

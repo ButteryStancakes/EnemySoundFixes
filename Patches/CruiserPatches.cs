@@ -23,7 +23,7 @@ namespace EnemySoundFixes.Patches
 
             for (int i = 4; i < codes.Count; i++)
             {
-                if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == References.PLAY_ONE_SHOT && codes[i - 3].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 3].operand == References.ENGINE_AUDIO_1)
+                if (codes[i].opcode == OpCodes.Callvirt && codes[i].operand as MethodInfo == References.PLAY_ONE_SHOT && codes[i - 3].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 3].operand == References.ENGINE_AUDIO_1)
                 {
                     codes.InsertRange(i - 4, [
                         new CodeInstruction(codes[i - 4].opcode, codes[i - 4].operand),
@@ -35,8 +35,8 @@ namespace EnemySoundFixes.Patches
                 }
             }
 
-            Plugin.Logger.LogError("Cruiser transpiler failed");
-            return codes;
+            Plugin.Logger.LogError("Cruiser rev transpiler failed");
+            return instructions;
         }
 
         [HarmonyPatch(nameof(VehicleController.SetVehicleAudioProperties))]
@@ -56,16 +56,17 @@ namespace EnemySoundFixes.Patches
             MethodInfo volume = AccessTools.DeclaredPropertyGetter(typeof(AudioSource), nameof(AudioSource.volume));
             for (int i = 0; i < codes.Count - 2; i++)
             {
-                if (codes[i].opcode == OpCodes.Callvirt && (MethodInfo)codes[i].operand == volume && codes[i + 1].opcode == OpCodes.Ldc_R4 && (float)codes[i + 1].operand == 0f && codes[i - 2].opcode == OpCodes.Bne_Un)
+                if (codes[i].opcode == OpCodes.Callvirt && codes[i].operand as MethodInfo == volume && codes[i + 1].opcode == OpCodes.Ldc_R4 && (float)codes[i + 1].operand == 0f && codes[i + 2].opcode == OpCodes.Bne_Un)
                 {
                     codes[i + 1].operand = 0.001f;
                     codes[i + 2].opcode = OpCodes.Bge;
                     Plugin.Logger.LogDebug("Transpiler (Cruiser): Stop audio source when volume is close enough to zero");
-                    break;
+                    return codes;
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError("Cruiser volume transpiler failed");
+            return instructions;
         }
 
         [HarmonyPatch(nameof(VehicleController.LateUpdate))]
@@ -194,6 +195,28 @@ namespace EnemySoundFixes.Patches
         {
             if (__instance.pushAudio.mute && __instance.turbulenceAmount > __state)
                 __instance.turbulenceAmount = __state;
+        }
+
+        [HarmonyPatch(nameof(VehicleController.PlayCollisionAudio))]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> VehicleController_Trans_PlayCollisionAudio(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            FieldInfo audio2Time = AccessTools.Field(typeof(VehicleController), nameof(VehicleController.audio2Time)),
+                      audio1Type = AccessTools.Field(typeof(VehicleController), nameof(VehicleController.audio1Type));
+            for (int i = 10; i < codes.Count; i++)
+            {
+                if (codes[i].opcode == OpCodes.Stfld && (FieldInfo)codes[i].operand == audio2Time && codes[i - 10].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 10].operand == audio1Type)
+                {
+                    codes[i - 10].operand = AccessTools.Field(typeof(VehicleController), nameof(VehicleController.audio1Type));
+                    Plugin.Logger.LogDebug("Transpiler (Cruiser): Correct last audio type checked");
+                    return codes;
+                }
+            }
+
+            Plugin.Logger.LogError("Cruiser collision transpiler failed");
+            return instructions;
         }
     }
 }

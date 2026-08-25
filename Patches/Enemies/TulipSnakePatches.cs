@@ -99,15 +99,16 @@ namespace EnemySoundFixes.Patches.Enemies
             FieldInfo audioClips = AccessTools.Field(typeof(EnemyType), nameof(EnemyType.audioClips));
             for (int i = 5; i < codes.Count; i++)
             {
-                if (codes[i].opcode == OpCodes.Call && (MethodInfo)codes[i].operand == References.PLAY_RANDOM_CLIP && codes[i - 1].opcode == OpCodes.Ldc_I4_5 && codes[i - 5].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 5].operand == audioClips)
+                if (codes[i].opcode == OpCodes.Call && codes[i].operand as MethodInfo == References.PLAY_RANDOM_CLIP && codes[i - 1].opcode == OpCodes.Ldc_I4_5 && codes[i - 5].opcode == OpCodes.Ldfld && (FieldInfo)codes[i - 5].operand == audioClips)
                 {
                     codes[i - 1].opcode = OpCodes.Ldc_I4_4;
                     Plugin.Logger.LogDebug("Transpiler (Tulip snake): Remove wingflap from chuckle pool");
-                    break;
+                    return codes;
                 }
             }
 
-            return codes;
+            Plugin.Logger.LogError("Tulip snake transpiler failed");
+            return instructions;
         }
     }
 }
