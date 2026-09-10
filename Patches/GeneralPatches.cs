@@ -281,6 +281,7 @@ namespace EnemySoundFixes.Patches
                                         garbageBin.thisAudioSource.rolloffMode = thisAudioSource.rolloffMode;
                                         garbageBin.thisAudioSource.minDistance = thisAudioSource.minDistance;
                                         garbageBin.thisAudioSource.maxDistance = thisAudioSource.maxDistance;
+                                        Plugin.Logger.LogDebug($"Fixed garbage bin \"{garbageBin.name}\"");
                                     }
                                 }
                             }
@@ -752,6 +753,24 @@ namespace EnemySoundFixes.Patches
         {
             if (!__instance.cozyLightsOn && __instance.turnOnAudio.isPlaying && __instance.turnOnAudio.volume > 0.3f)
                 __instance.turnOnAudio.volume *= 0.3f;
+        }
+
+        [HarmonyPatch(typeof(EnemyAI), nameof(EnemyAI.HitEnemy))]
+        [HarmonyPrefix]
+        static void EnemyAI_Pre_HitEnemy(EnemyAI __instance, bool playHitSFX)
+        {
+            if (playHitSFX && !__instance.isEnemyDead)
+            {
+                if (__instance.creatureVoice != null && __instance.enemyType.hitEnemyVoiceSFX != null)
+                {
+                    if (__instance.enemyType.hitBodySFX == null)
+                    {
+                        __instance.creatureVoice.PlayOneShot(__instance.enemyType.hitEnemyVoiceSFX);
+                        WalkieTalkie.TransmitOneShotAudio(__instance.creatureVoice, __instance.enemyType.hitEnemyVoiceSFX);
+                        Plugin.Logger.LogDebug($"Played missing hit sound \"{__instance.enemyType.hitEnemyVoiceSFX.name}\" for \"{__instance.name}\"");
+                    }
+                }
+            }
         }
     }
 }
