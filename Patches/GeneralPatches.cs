@@ -819,9 +819,16 @@ namespace EnemySoundFixes.Patches
 
         [HarmonyPatch(typeof(SoundManager), nameof(SoundManager.PlayNonDiageticSound))]
         [HarmonyPrefix]
-        static bool SoundManager_Pre_PlayNonDiageticSound()
+        static bool SoundManager_Pre_PlayNonDiageticSound(SoundManager __instance)
         {
-            return StartOfRound.Instance.currentLevelID != 3;
+            if (StartOfRound.Instance.currentLevelID == 3)
+            {
+                __instance.ambienceAudioNonDiagetic.volume = Mathf.Lerp(__instance.ambienceAudioNonDiagetic.volume, 0f, Time.deltaTime);
+                __instance.isInsanityMusicPlaying = false;
+                return false;
+            }
+
+            return true;
         }
     }
 }
