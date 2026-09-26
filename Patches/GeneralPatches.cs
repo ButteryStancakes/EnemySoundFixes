@@ -484,12 +484,27 @@ namespace EnemySoundFixes.Patches
         [HarmonyWrapSafe]
         static void StartOfRound_Post_Awake(StartOfRound __instance)
         {
-            __instance.speakerAudioSource.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
-            __instance.shipDoorAudioSource.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
-            Plugin.Logger.LogDebug("Doppler level: Ship speakers");
+            if (__instance.speakerAudioSource != null)
+            {
+                __instance.speakerAudioSource.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
+                if (__instance.shipDoorAudioSource != null)
+                    __instance.shipDoorAudioSource.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
+                Plugin.Logger.LogDebug("Doppler level: Ship speakers");
+            }
 
-            __instance.VehiclesList.FirstOrDefault(vehicle => vehicle.name == "CompanyCruiser").GetComponent<VehicleController>().radioAudio.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
-            Plugin.Logger.LogDebug("Doppler level: Cruiser");
+            AudioSource lampAudio = __instance.elevatorTransform?.Find("LampSqueakAudio")?.GetComponent<AudioSource>();
+            if (lampAudio != null)
+            {
+                lampAudio.dopplerLevel = 0f;
+                Plugin.Logger.LogDebug("Doppler level: Ship lamp");
+            }
+
+            AudioSource radioAudio = __instance.VehiclesList?.FirstOrDefault(vehicle => vehicle.name == "CompanyCruiser")?.GetComponent<VehicleController>()?.radioAudio;
+            if (radioAudio != null)
+            {
+                radioAudio.dopplerLevel = Plugin.configMusicDopplerLevel.Value;
+                Plugin.Logger.LogDebug("Doppler level: Cruiser");
+            }
 
             AudioSource stickyNote = __instance.elevatorTransform.Find("StickyNoteItem")?.GetComponent<AudioSource>();
             if (stickyNote != null)
@@ -578,8 +593,7 @@ namespace EnemySoundFixes.Patches
                         dropPlastic2 = item.dropSFX;
                         break;
                     case "FancyCup":
-                        if (!Plugin.INSTALLED_UPTURNED_VARIETY)
-                            metalSFXItems.Add(item);
+                        metalSFXItems.Add(item);
                         break;
                     case "FancyPainting":
                         cardboardSFXItems.Add(item);
@@ -771,6 +785,43 @@ namespace EnemySoundFixes.Patches
                     }
                 }
             }
+        }
+
+        [HarmonyPatch(typeof(RoundManager), nameof(RoundManager.GenerateNewLevelClientRpc))]
+        [HarmonyPostfix]
+        static void RoundManager_Post_GenerateNewLevelClientRpc(RoundManager __instance)
+        {
+            if (SoundManager.Instance != null && __instance.currentLevel != null)
+            {
+                if (__instance.currentLevel.levelAmbienceClips == null)
+                {
+                    if (SoundManager.Instance.currentLevelAmbience != null)
+                    {
+                        SoundManager.Instance.currentLevelAmbience = null;
+                        Plugin.Logger.LogDebug("Cleared current level ambience library (current level has none defined)");
+                    }
+                }
+                else if (SoundManager.Instance.currentLevelAmbience != __instance.currentLevel.levelAmbienceClips)
+                {
+                    SoundManager.Instance.currentLevelAmbience = __instance.currentLevel.levelAmbienceClips;
+                    Plugin.Logger.LogDebug("Corrected assigned level ambience library (current level does not spawn enemies or scrap)");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(SoundManager), nameof(SoundManager.ServerSoundTimer))]
+        [HarmonyPatch(typeof(SoundManager), nameof(SoundManager.LocalPlayerSoundTimer))]
+        [HarmonyPrefix]
+        static bool SoundManager_Pre_SoundTimer()
+        {
+            return TimeOfDay.Instance == null || TimeOfDay.Instance.currentDayTimeStarted;
+        }
+
+        [HarmonyPatch(typeof(SoundManager), nameof(SoundManager.PlayNonDiageticSound))]
+        [HarmonyPrefix]
+        static bool SoundManager_Pre_PlayNonDiageticSound()
+        {
+            return StartOfRound.Instance.currentLevelID != 3;
         }
     }
 }

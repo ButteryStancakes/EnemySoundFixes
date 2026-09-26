@@ -57,7 +57,7 @@ namespace EnemySoundFixes
                 if (StartOfRound.Instance.allPlayerScripts[i].holdingWalkieTalkie && StartOfRound.Instance.allPlayerScripts[i].speakingToWalkieTalkie)
                 {
                     // don't trigger when there's only a single walkie in use
-                    if (StartOfRound.Instance.allPlayerScripts[i].currentlyHeldObjectServer != walkieTalkie)
+                    if (StartOfRound.Instance.allPlayerScripts[i].currentlyHeldObjectServer == walkieTalkie)
                         continue;
 
                     radiosInUse = true;
