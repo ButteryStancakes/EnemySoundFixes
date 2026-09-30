@@ -136,34 +136,6 @@ namespace EnemySoundFixes.Patches
             }
         }
 
-        [HarmonyPatch(typeof(MouthDogAI), nameof(MouthDogAI.OnCollideWithEnemy))]
-        [HarmonyPatch(typeof(BushWolfEnemy), nameof(BushWolfEnemy.OnCollideWithEnemy))]
-        [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> EnemyAI_Trans_OnCollideWithEnemy(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
-        {
-            List<CodeInstruction> codes = instructions.ToList();
-
-            for (int i = 2; i < codes.Count; i++)
-            {
-                if (codes[i].opcode == OpCodes.Callvirt && codes[i].operand as MethodInfo == References.HIT_ENEMY)
-                {
-                    codes.RemoveAt(i - 2);
-                    codes.InsertRange(i - 2,
-                    [
-                        new CodeInstruction(OpCodes.Ldarg_2),
-                        new CodeInstruction(OpCodes.Ldfld, References.IS_ENEMY_DEAD),
-                        new CodeInstruction(OpCodes.Ldc_I4_0),
-                        new CodeInstruction(OpCodes.Ceq)
-                    ]);
-                    Plugin.Logger.LogDebug($"Transpiler ({__originalMethod.DeclaringType}.{__originalMethod.Name}): Don't play hit sound when attacking dead enemy");
-                    return codes;
-                }
-            }
-
-            Plugin.Logger.LogError($"{__originalMethod.DeclaringType}.{__originalMethod.Name} transpiler failed");
-            return instructions;
-        }
-
         [HarmonyPatch(typeof(StormyWeather), nameof(StormyWeather.PlayThunderEffects))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> StormyWeather_Trans_PlayThunderEffects(IEnumerable<CodeInstruction> instructions)
@@ -829,6 +801,36 @@ namespace EnemySoundFixes.Patches
             }
 
             return true;
+        }
+
+        [HarmonyPatch(typeof(SoundManager), nameof(SoundManager.Start))]
+        [HarmonyPostfix]
+        static void SoundManager_Post_Start(SoundManager __instance)
+        {
+            __instance.musicSource.volume = 0f;
+            __instance.ringingEarsAudio.volume = 0.5f;
+        }
+
+        [HarmonyPatch(typeof(SoundManager), nameof(SoundManager.Update))]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> SoundManager_Trans_Update(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = instructions.ToList();
+
+            FieldInfo timeSincePlayingLastMusic = AccessTools.Field(typeof(SoundManager), nameof(SoundManager.timeSincePlayingLastMusic));
+            for (int i = 0; i < codes.Count; i++)
+            {
+                if (codes[i].opcode == OpCodes.Stfld && (FieldInfo)codes[i].operand == timeSincePlayingLastMusic && codes[i - 1].opcode == OpCodes.Add && codes[i - 2].opcode == OpCodes.Ldc_R4 && (float)codes[i - 2].operand == 1f)
+                {
+                    codes[i - 2].opcode = OpCodes.Call;
+                    codes[i - 2].operand = AccessTools.DeclaredPropertyGetter(typeof(Time), nameof(Time.deltaTime));
+                    Plugin.Logger.LogDebug("Transpiler (Music): Fix 200s cooldown");
+                    return codes;
+                }
+            }
+
+            Plugin.Logger.LogError("Music transpiler failed");
+            return instructions;
         }
     }
 }
