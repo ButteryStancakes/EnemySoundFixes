@@ -75,7 +75,7 @@ namespace EnemySoundFixes.Patches
                     case "Crawler":
                         if (Plugin.configThumperNoThunder.Value)
                         {
-                            EnemyBehaviourState searching = enemy.enemyType.enemyPrefab.GetComponent<CrawlerAI>().enemyBehaviourStates.FirstOrDefault(enemyBehaviourState => enemyBehaviourState.name == "searching");
+                            EnemyBehaviourState searching = enemy.enemyType.enemyPrefab.GetComponent<CrawlerAI>()?.enemyBehaviourStates?.FirstOrDefault(enemyBehaviourState => enemyBehaviourState.name == "searching");
                             if (searching != null)
                             {
                                 searching.VoiceClip = null;
@@ -418,7 +418,16 @@ namespace EnemySoundFixes.Patches
         [HarmonyPrefix]
         static bool GrabbableObject_Pre_PlayDropSFX(GrabbableObject __instance)
         {
-            return __instance is not LockPicker lockPicker || !lockPicker.isOnDoor;
+            if (__instance is LockPicker lockPicker && lockPicker.isOnDoor)
+                return false;
+
+            if (__instance is GiftBoxItem giftBoxItem && (giftBoxItem.hasUsedGift || giftBoxItem.PoofParticle.isPlaying || giftBoxItem.presentAudio.isPlaying))
+            {
+                giftBoxItem.hasHitGround = true;
+                return false;
+            }
+
+            return true;
         }
 
         [HarmonyPatch(typeof(Landmine), nameof(Landmine.Detonate))]
