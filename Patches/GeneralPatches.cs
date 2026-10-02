@@ -421,7 +421,7 @@ namespace EnemySoundFixes.Patches
             if (__instance is LockPicker lockPicker && lockPicker.isOnDoor)
                 return false;
 
-            if (__instance is GiftBoxItem giftBoxItem && (giftBoxItem.hasUsedGift || giftBoxItem.PoofParticle.isPlaying || giftBoxItem.presentAudio.isPlaying))
+            if (__instance is GiftBoxItem giftBoxItem && giftBoxItem.hasUsedGift)
             {
                 giftBoxItem.hasHitGround = true;
                 return false;
@@ -840,6 +840,14 @@ namespace EnemySoundFixes.Patches
 
             Plugin.Logger.LogError("Music transpiler failed");
             return instructions;
+        }
+
+        [HarmonyPatch(typeof(GiftBoxItem), nameof(GiftBoxItem.OpenGiftBoxClientRpc))]
+        [HarmonyPatch(typeof(GiftBoxItem), nameof(GiftBoxItem.OpenGiftBoxNoPresentClientRpc))]
+        [HarmonyPostfix]
+        static void GiftBoxItem_Post_OpenGiftBoxClientRpc(GiftBoxItem __instance)
+        {
+            __instance.hasUsedGift = true;
         }
     }
 }
