@@ -84,6 +84,10 @@ namespace EnemySoundFixes.Patches
                             }
                         }
                         break;
+                    case "DressGirl":
+                        enemy.enemyType.enemyPrefab.GetComponent<DressGirlAI>().creatureVoice.dopplerLevel = 0f;
+                        Plugin.Logger.LogDebug("Doppler level: Girl");
+                        break;
                     case "Flowerman":
                         if (stunFlowerman != null)
                         {
@@ -407,11 +411,29 @@ namespace EnemySoundFixes.Patches
         }
 
         [HarmonyPatch(typeof(EnemyVent), nameof(EnemyVent.OpenVentClientRpc))]
+        [HarmonyPrefix]
+        static void EnemyVent_Pre_OpenVentClientRpc(EnemyVent __instance, ref bool __state)
+        {
+            __state = __instance.ventIsOpen && __instance.isPlayingAudio;
+        }
+
+        [HarmonyPatch(typeof(EnemyVent), nameof(EnemyVent.OpenVentClientRpc))]
         [HarmonyPostfix]
-        static void EnemyVent_Post_OpenVentClientRpc(EnemyVent __instance)
+        static void EnemyVent_Post_OpenVentClientRpc(EnemyVent __instance, bool __state)
         {
             __instance.isPlayingAudio = false;
             __instance.ventAudio.Stop();
+            // why the fuck does this code run twice
+            if (__instance.caveVent && __state && __instance.TryGetComponent(out PlayAudioAnimationEvent playAudioAnimationEvent) && playAudioAnimationEvent.audioToPlay != null && playAudioAnimationEvent.audioClip != null)
+            {
+                if (playAudioAnimationEvent.audioToPlay.isPlaying)
+                {
+                    Plugin.Logger.LogWarning($"Vent #{__instance.NetworkObjectId} is still playing audio somehow (why?!)");
+                    playAudioAnimationEvent.audioToPlay.Stop();
+                }
+                playAudioAnimationEvent.audioToPlay.PlayOneShot(playAudioAnimationEvent.audioClip);
+                Plugin.Logger.LogDebug($"Vent #{__instance.NetworkObjectId}: Played backup cave vent sound at {Time.time}s");
+            }
         }
 
         [HarmonyPatch(typeof(GrabbableObject), nameof(GrabbableObject.PlayDropSFX))]
@@ -421,9 +443,9 @@ namespace EnemySoundFixes.Patches
             if (__instance is LockPicker lockPicker && lockPicker.isOnDoor)
                 return false;
 
-            if (__instance is GiftBoxItem giftBoxItem && giftBoxItem.hasUsedGift)
+            if (__instance.deactivated || (__instance is GiftBoxItem giftBoxItem && giftBoxItem.hasUsedGift) || (__instance is StunGrenadeItem stunGrenadeItem && stunGrenadeItem.explodeOnCollision && stunGrenadeItem.pinPulled && stunGrenadeItem.playerThrownBy != null))
             {
-                giftBoxItem.hasHitGround = true;
+                __instance.hasHitGround = true;
                 return false;
             }
 
